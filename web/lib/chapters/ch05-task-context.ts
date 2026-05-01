@@ -13,6 +13,26 @@ export const ch05: ChapterDef = {
     "Connect the analyzer to the researcher so the search is driven by the actual ImagePullBackOff finding.",
   takeaway:
     "Context chaining is what makes multi-agent systems powerful. Without it, each agent works in isolation. With it, downstream agents build on upstream results — producing targeted, specific output instead of generic guesses.",
+  examples: [
+    {
+      title: "Research without context",
+      scenario: "The researcher starts after the analyzer, but cannot see the analyzer's result.",
+      change: "No `context` is passed into the research task.",
+      outcome: "It gives generic Kubernetes commands because it does not know the exact error.",
+    },
+    {
+      title: "Research with context",
+      scenario: "The analyzer finds ImagePullBackOff on `myapp:v1.2.3`.",
+      change: "That analysis is passed into the researcher with `context=[analyze_task]`.",
+      outcome: "The researcher searches for the right failure mode and returns targeted fixes.",
+    },
+    {
+      title: "Planning with two inputs",
+      scenario: "The final agent needs both the log analysis and the research findings.",
+      change: "The plan task receives both previous task outputs as context.",
+      outcome: "The plan can connect evidence, fixes, verification, and prevention.",
+    },
+  ],
   demos: [
     {
       id: "context-chaining",
