@@ -2,11 +2,15 @@ import type { ChapterDef } from "../schema";
 
 export const ch08: ChapterDef = {
   slug: "crew-orchestration",
-  number: 8,
+  number: 6,
+  phase: "Notebook 01",
+  phaseTitle: "Build the Pipeline",
   title: "Crew Orchestration",
   subtitle: "Combine agents, tasks, and process into a working Crew",
   intro:
-    "A Crew bundles agents and tasks together with a process strategy. Process.sequential runs tasks in order, letting each build on the previous through context. Adding more specialized agents deepens the output at each stage.",
+    "Notebook 01 culminates in a complete Crew: three agents, three tasks, `Process.sequential`, context chaining, and saved markdown artifacts. Process.sequential runs tasks in order, letting each build on the previous through context. Adding more specialized agents deepens the output at each stage.",
+  progression:
+    "This is the Notebook 01 finish line: analysis, investigation, and remediation plan working as one pipeline.",
   takeaway:
     "A 3-agent crew produces fundamentally better output than a single agent trying to do everything. Each agent focuses on its specialty and passes structured results downstream. The whole is greater than the sum of its parts.",
   demos: [
@@ -84,18 +88,43 @@ verification steps. That needs a third agent.`,
           description: "Full pipeline: analyze → research → plan",
           log: [
             { tag: "BOOT", text: "Initializing crew: 3 agents, 3 tasks" },
-            { tag: "INFO", text: "Process: sequential, verbose: true" },
+            { tag: "INFO", text: "Process: sequential, verbose=True, cache=True, max_rpm=30" },
             { tag: "PROCESS", text: "Task 1/3: Log Analyzer starting..." },
-            { tag: "OK", text: "Task 1/3 complete: Analysis ready" },
+            { tag: "OK", text: "Task 1/3 complete: task_outputs/log_analysis.md" },
             { tag: "PROCESS", text: "Task 2/3: Researcher starting..." },
             { tag: "INFO", text: "  Context: received analysis" },
-            { tag: "OK", text: "Task 2/3 complete: Solutions found" },
+            { tag: "OK", text: "Task 2/3 complete: task_outputs/investigation_report.md" },
             { tag: "PROCESS", text: "Task 3/3: Plan Writer starting..." },
             { tag: "INFO", text: "  Context: analysis + research" },
-            { tag: "OK", text: "Task 3/3 complete: Remediation plan" },
+            { tag: "OK", text: "Task 3/3 complete: task_outputs/solution_plan.md" },
             { tag: "SUCCESS", text: "Crew finished: 3/3 tasks complete" },
           ],
-          output: `# DevOps Remediation Plan (3 Agents)
+          output: `Generated artifacts:
+- task_outputs/log_analysis.md
+- task_outputs/investigation_report.md
+- task_outputs/solution_plan.md
+
+# task_outputs/log_analysis.md
+
+## Primary Issue
+ImagePullBackOff on myapp:v1.2.3 — image not found or registry credentials missing.
+
+## Root Cause
+The deployment references a container image the cluster cannot pull. The failure cascades into a rollout deadline and rollback.
+
+# task_outputs/investigation_report.md
+
+## Common Causes
+1. Image tag was never pushed by CI/CD
+2. Private registry credentials missing or expired
+3. ServiceAccount missing imagePullSecrets
+
+## Proven Fixes
+- Verify the image exists before redeploying
+- Create or refresh the registry secret
+- Patch the ServiceAccount used by the deployment
+
+# task_outputs/solution_plan.md
 
 ## Incident Summary
 Issue: ImagePullBackOff on myapp:v1.2.3
