@@ -2,11 +2,15 @@ import type { ChapterDef } from "../schema";
 
 export const ch06: ChapterDef = {
   slug: "structured-output",
-  number: 6,
+  number: 7,
+  phase: "Notebook 02",
+  phaseTitle: "Harden the Pipeline",
   title: "Structured Output",
   subtitle: "Force the agent to return typed, validated data using Pydantic models",
   intro:
-    "Free-text output is fine for humans but impossible to use programmatically. With output_pydantic on a Task, CrewAI forces the LLM to return valid JSON matching your schema — giving you typed fields you can access directly.",
+    "Notebook 02 starts hardening the working pipeline by replacing fragile free text with typed data. With output_pydantic on a Task, CrewAI forces the LLM to return valid JSON matching your schema — giving you typed fields you can access directly.",
+  progression:
+    "Now that the full crew works, upgrade the first task from markdown analysis to a `LogAnalysisReport` JSON artifact.",
   takeaway:
     "Structured output transforms agent output from a string you have to parse into a typed object you can use directly. report.primary_issue beats regex-parsing a wall of markdown every time.",
   demos: [
@@ -61,11 +65,14 @@ fragile and unreliable.
           log: [
             { tag: "BOOT", text: "Initializing crew with Pydantic output" },
             { tag: "INFO", text: "output_pydantic: LogAnalysisReport" },
+            { tag: "INFO", text: "Artifact: task_outputs/log_analysis.json" },
             { tag: "PROCESS", text: "Agent analyzing logs..." },
             { tag: "PROCESS", text: "LLM constrained to return valid JSON schema..." },
             { tag: "OK", text: "Structured output validated against schema" },
           ],
-          output: `{
+          output: `task_outputs/log_analysis.json
+
+{
   "primary_issue": "Production deployment failed due to ImagePullBackOff",
   "root_cause": "Image myapp:v1.2.3 not found or registry credentials missing",
   "errors": [
