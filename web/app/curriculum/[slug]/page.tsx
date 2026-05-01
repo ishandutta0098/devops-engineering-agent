@@ -3,12 +3,20 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { chapters, getChapter, getAdjacentChapters } from "@/lib/registry";
 import { ChapterSidebar } from "@/components/AppShell/ChapterSidebar";
-import { ConceptBlock } from "@/components/Chapter/ConceptBlock";
-import { BeforeAfterComparison } from "@/components/Chapter/BeforeAfterComparison";
-import { ChapterPlayground } from "@/components/Chapter/ChapterPlayground";
+import { DemoStation } from "@/components/Chapter/DemoStation";
+import { ParameterControls } from "@/components/Chapter/ParameterControls";
+import { GuardrailPlayground } from "@/components/Chapter/GuardrailPlayground";
+import { FullPipelinePlayground } from "@/components/Demo/FullPipelinePlayground";
 
 export function generateStaticParams() {
   return chapters.map((ch) => ({ slug: ch.slug }));
+}
+
+function SpecializedPlayground({ slug }: { slug: string }) {
+  if (slug === "agent-parameters") return <ParameterControls />;
+  if (slug === "guardrails") return <GuardrailPlayground />;
+  if (slug === "full-pipeline") return <FullPipelinePlayground />;
+  return null;
 }
 
 export default async function ChapterPage({
@@ -21,13 +29,14 @@ export default async function ChapterPage({
   if (!chapter) notFound();
 
   const { prev, next } = getAdjacentChapters(slug);
+  const hasSpecialized = ["agent-parameters", "guardrails", "full-pipeline"].includes(slug);
 
   return (
     <div className="flex">
       <ChapterSidebar />
 
       <div className="lg:pl-64 flex-1">
-        <div className="max-w-4xl mx-auto px-6 py-12">
+        <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="mb-10">
             <span className="font-code text-amber text-label-caps uppercase tracking-widest">
               Chapter {String(chapter.number).padStart(2, "0")}
@@ -41,35 +50,34 @@ export default async function ChapterPage({
           </div>
 
           <div className="bg-surface/50 border border-hairline rounded-lg p-6 mb-12">
-            <h2 className="font-headline text-label-caps uppercase text-amber tracking-widest mb-2">
-              Objective
-            </h2>
-            <p className="font-body text-body-md text-ink">{chapter.objective}</p>
+            <p className="font-body text-body-md text-ink leading-relaxed">
+              {chapter.intro}
+            </p>
           </div>
 
-          <section className="space-y-10 mb-16">
-            <h2 className="font-headline text-headline-md text-ink">Concepts</h2>
-            {chapter.concepts.map((concept) => (
-              <ConceptBlock key={concept.id} concept={concept} />
+          <section className="space-y-12 mb-16">
+            {chapter.demos.map((demo) => (
+              <DemoStation key={demo.id} demo={demo} />
             ))}
           </section>
 
-          <section className="mb-16">
-            <h2 className="font-headline text-headline-md text-ink mb-6">
-              Before & After
-            </h2>
-            <BeforeAfterComparison
-              baseline={chapter.fixtures.baseline}
-              enhanced={chapter.fixtures.enhanced}
-            />
-          </section>
+          {hasSpecialized && (
+            <section className="mb-16">
+              <h2 className="font-headline text-headline-md text-ink mb-6">
+                Advanced Demo
+              </h2>
+              <SpecializedPlayground slug={slug} />
+            </section>
+          )}
 
-          <section className="mb-16">
-            <h2 className="font-headline text-headline-md text-ink mb-6">
-              Interactive Demo
+          <div className="bg-surface/50 border border-amber/20 rounded-lg p-6 mb-12">
+            <h2 className="font-headline text-label-caps uppercase text-amber tracking-widest mb-2">
+              Key Takeaway
             </h2>
-            <ChapterPlayground chapter={chapter} />
-          </section>
+            <p className="font-body text-body-md text-ink leading-relaxed">
+              {chapter.takeaway}
+            </p>
+          </div>
 
           <nav className="flex items-center justify-between border-t border-hairline pt-8">
             {prev ? (
