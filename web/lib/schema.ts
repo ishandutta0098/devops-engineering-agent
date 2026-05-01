@@ -39,6 +39,13 @@ export type DemoDef = {
   variants: Record<string, FixturePair>;
 };
 
+export type ChapterExample = {
+  title: string;
+  scenario: string;
+  change: string;
+  outcome: string;
+};
+
 export type ChapterDef = {
   slug: string;
   number: number;
@@ -49,6 +56,7 @@ export type ChapterDef = {
   intro: string;
   progression: string;
   takeaway: string;
+  examples?: ChapterExample[];
   demos: DemoDef[];
   agentConfig: {
     role: string;
