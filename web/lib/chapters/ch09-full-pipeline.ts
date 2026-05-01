@@ -3,10 +3,14 @@ import type { ChapterDef } from "../schema";
 export const ch09: ChapterDef = {
   slug: "full-pipeline",
   number: 9,
+  phase: "Notebook 02",
+  phaseTitle: "Harden the Pipeline",
   title: "The Full Pipeline",
   subtitle: "Combine everything into a production-ready DevOps agent system",
   intro:
-    "This is where every concept comes together. Three agents with tools, chained tasks with context, structured output with Pydantic, and guardrails for quality — all orchestrated by a single Crew. Compare the base pipeline with the full production version to see what each feature adds.",
+    "Notebook 02 ends by running the hardened version of the same three-agent system from Notebook 01. Three agents with tools, chained tasks with context, structured output with Pydantic, and guardrails for quality are orchestrated by a single Crew. Compare the base pipeline with the full production version to see what each feature adds.",
+  progression:
+    "This final chapter should feel like the consolidated notebook cell: one run that produces analysis, investigation, and a validated solution plan.",
   takeaway:
     "Each feature you've learned compounds. Tools give agents capabilities. Context chains their output. Structured output makes it machine-readable. Guardrails ensure quality. Together, they produce a production-grade system that turns raw logs into actionable remediation plans.",
   demos: [
@@ -46,21 +50,30 @@ export const ch09: ChapterDef = {
             { tag: "BOOT", text: "Initializing pipeline (base mode)" },
             { tag: "INFO", text: "Features: tools=yes, structured_output=no, guardrails=no" },
             { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
-            { tag: "OK", text: "Agent 1 complete: Raw text analysis" },
+            { tag: "OK", text: "Agent 1 complete: task_outputs/log_analysis.md" },
             { tag: "PROCESS", text: "Agent 2 (Researcher): Searching..." },
-            { tag: "OK", text: "Agent 2 complete: Solutions found" },
+            { tag: "OK", text: "Agent 2 complete: task_outputs/investigation_report.md" },
             { tag: "PROCESS", text: "Agent 3 (Plan Writer): Writing plan..." },
-            { tag: "OK", text: "Agent 3 complete: Plan written" },
+            { tag: "OK", text: "Agent 3 complete: task_outputs/solution_plan.md" },
             { tag: "SUCCESS", text: "Pipeline complete (base)" },
           ],
-          output: `# Remediation Plan (Base Pipeline)
+          output: `Generated artifacts:
+- task_outputs/log_analysis.md
+- task_outputs/investigation_report.md
+- task_outputs/solution_plan.md
+
+# task_outputs/log_analysis.md
 
 ## Analysis
 The deployment failed. There were image pull errors.
 
-## Solutions
+# task_outputs/investigation_report.md
+
+## Solutions Found
 - Check the image name
 - Add credentials
+
+# task_outputs/solution_plan.md
 
 ## Plan
 1. Fix the image
@@ -155,18 +168,59 @@ Guardrails ensured both the analysis quality AND the plan quality.`,
             { tag: "INFO", text: "Features: ALL ENABLED" },
             { tag: "PROCESS", text: "Agent 1 (Analyzer): FileReadTool reading logs..." },
             { tag: "PROCESS", text: "  output_pydantic=LogAnalysisReport" },
+            { tag: "INFO", text: "  Artifact: task_outputs/log_analysis.json" },
             { tag: "GUARDRAIL", text: "validate_log_analysis() → PASSED (4 errors)" },
             { tag: "OK", text: "Agent 1 complete: Structured + validated" },
             { tag: "PROCESS", text: "Agent 2 (Researcher): context from Agent 1" },
             { tag: "INFO", text: "  EXASearchTool: 'ImagePullBackOff fix kubernetes'" },
             { tag: "INFO", text: "  Found 5 targeted solutions with sources" },
-            { tag: "OK", text: "Agent 2 complete: Research with citations" },
+            { tag: "OK", text: "Agent 2 complete: task_outputs/investigation_report.md" },
             { tag: "PROCESS", text: "Agent 3 (Plan Writer): context from Agents 1+2" },
             { tag: "GUARDRAIL", text: "String guardrail → PASSED (4 shell commands)" },
-            { tag: "OK", text: "Agent 3 complete: Production-grade plan" },
+            { tag: "OK", text: "Agent 3 complete: task_outputs/solution_plan.md" },
             { tag: "SUCCESS", text: "Pipeline complete — ALL FEATURES ACTIVE" },
           ],
-          output: `# Production Remediation Plan
+          output: `Generated artifacts:
+- task_outputs/log_analysis.json
+- task_outputs/investigation_report.md
+- task_outputs/solution_plan.md
+
+# task_outputs/log_analysis.json
+
+{
+  "primary_issue": "Production deployment failed due to ImagePullBackOff",
+  "root_cause": "Image myapp:v1.2.3 not found or registry credentials missing",
+  "errors": [
+    "Failed to pull image myapp:v1.2.3: pull access denied",
+    "Pod status: ImagePullBackOff",
+    "Deployment rollout failed: exceeded progress deadline",
+    "Production deployment failed - rollback initiated"
+  ],
+  "affected_components": [
+    "Pod: myapp-deployment-7b8c9d5f4-abc12",
+    "Deployment: myapp-deployment",
+    "Service: myapp-service"
+  ],
+  "timeline": [
+    "14:32:15 - Deployment started",
+    "14:32:18 - Image pull access denied",
+    "14:32:25 - Deployment deadline exceeded",
+    "14:32:29 - Rollback initiated"
+  ]
+}
+
+# task_outputs/investigation_report.md
+
+## Findings
+- Kubernetes ImagePullBackOff commonly means the image tag is absent or credentials are invalid.
+- Official container image guidance recommends validating the image reference and pull secret configuration.
+- The previous working tag suggests a CI/CD publish or registry credential issue.
+
+# task_outputs/solution_plan.md
+
+String guardrail requirement: at least 3 copy-pasteable shell commands.
+
+# Production Remediation Plan
 
 ## Incident Summary
 | Field | Value |
