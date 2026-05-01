@@ -16,15 +16,6 @@ export type LogLine = {
   ts?: string;
 };
 
-export type FieldDef = {
-  key: string;
-  label: string;
-  kind: "text" | "textarea" | "select";
-  placeholder?: string;
-  options?: string[];
-  rows?: number;
-};
-
 export type FixturePair = {
   label: string;
   description: string;
@@ -32,12 +23,20 @@ export type FixturePair = {
   output: string;
 };
 
-export type ConceptDef = {
-  id: string;
-  title: string;
+export type DemoOption = {
+  key: string;
+  label: string;
   description: string;
-  code: string;
-  language?: string;
+};
+
+export type DemoDef = {
+  id: string;
+  question: string;
+  controlLabel: string;
+  options: DemoOption[];
+  defaultLeft: string;
+  defaultRight: string;
+  variants: Record<string, FixturePair>;
 };
 
 export type ChapterDef = {
@@ -45,17 +44,12 @@ export type ChapterDef = {
   number: number;
   title: string;
   subtitle: string;
-  objective: string;
-  concepts: ConceptDef[];
-  inputSchema: FieldDef[];
-  fixtures: {
-    baseline: FixturePair;
-    enhanced: FixturePair;
-  };
+  intro: string;
+  takeaway: string;
+  demos: DemoDef[];
   agentConfig: {
     role: string;
     goal: string;
     backstory: string;
   };
-  highlightParam?: string;
 };
