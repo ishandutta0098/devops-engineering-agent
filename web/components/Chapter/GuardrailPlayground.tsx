@@ -8,11 +8,7 @@ import { TerminalWindow } from "@/components/Terminal/Window";
 import { ExecutionStage, type StageState } from "@/components/Terminal/ExecutionStage";
 import { Play, RotateCcw, ShieldCheck, ShieldOff } from "lucide-react";
 
-const GUARDRAIL_CODE = `def validate_log_analysis(result: TaskOutput) -> tuple[bool, any]:
-    report = result.pydantic
-    if not report or not report.errors:
-        return (False, "Must identify at least one error")
-    return (True, report)`;
+const demo = ch07.demos[0];
 
 export function GuardrailPlayground() {
   const [guardrailEnabled, setGuardrailEnabled] = useState(false);
@@ -26,8 +22,8 @@ export function GuardrailPlayground() {
     setState("running");
 
     const fixture = guardrailEnabled
-      ? ch07.fixtures.enhanced
-      : ch07.fixtures.baseline;
+      ? demo.variants["code-guardrail"]
+      : demo.variants["no-guardrail"];
 
     await runFixture(fixture, {
       onLog: (line) => setLogs((prev) => [...prev, line]),
@@ -84,17 +80,6 @@ export function GuardrailPlayground() {
               Code Guardrail
             </button>
           </div>
-
-          {guardrailEnabled && (
-            <div className="bg-surface-low rounded p-4 border border-amber/20">
-              <span className="font-code text-[10px] text-amber uppercase tracking-widest block mb-2">
-                Active Guardrail
-              </span>
-              <pre className="font-code text-xs text-ink whitespace-pre-wrap leading-relaxed">
-                {GUARDRAIL_CODE}
-              </pre>
-            </div>
-          )}
 
           <div className="flex gap-3">
             <button
