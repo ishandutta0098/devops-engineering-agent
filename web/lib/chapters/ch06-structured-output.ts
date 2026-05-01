@@ -5,69 +5,40 @@ export const ch06: ChapterDef = {
   number: 6,
   title: "Structured Output",
   subtitle: "Force the agent to return typed, validated data using Pydantic models",
-  objective:
-    "Learn how output_pydantic replaces free-text with machine-readable structured data.",
-  concepts: [
+  intro:
+    "Free-text output is fine for humans but impossible to use programmatically. With output_pydantic on a Task, CrewAI forces the LLM to return valid JSON matching your schema — giving you typed fields you can access directly.",
+  takeaway:
+    "Structured output transforms agent output from a string you have to parse into a typed object you can use directly. report.primary_issue beats regex-parsing a wall of markdown every time.",
+  demos: [
     {
-      id: "pydantic-model",
-      title: "Define a Pydantic Model",
-      description:
-        "Create a BaseModel subclass with typed fields. Each Field gets a description that guides the LLM.",
-      code: `from pydantic import BaseModel, Field
-
-class LogAnalysisReport(BaseModel):
-    primary_issue: str = Field(
-        description="One-line description of the main issue"
-    )
-    root_cause: str = Field(
-        description="Root cause analysis based on log evidence"
-    )
-    errors: list[str] = Field(
-        description="All errors found in the log"
-    )
-    affected_components: list[str] = Field(
-        description="System components affected"
-    )
-    timeline: list[str] = Field(
-        description="Sequence of events leading to failure"
-    )`,
-    },
-    {
-      id: "output-pydantic",
-      title: "output_pydantic on the Task",
-      description:
-        "Set output_pydantic=LogAnalysisReport on the Task. CrewAI will force the LLM to return valid JSON matching the schema.",
-      code: `analyze_task = Task(
-    description="Analyze the following log data: {log_data}",
-    expected_output="A structured log analysis report",
-    output_pydantic=LogAnalysisReport,
-    agent=log_analyzer,
-)
-
-result = crew.kickoff(inputs={"log_data": LOG_INPUT})
-report = result.pydantic
-print(report.primary_issue)  # typed access!`,
-    },
-  ],
-  inputSchema: [
-    {
-      key: "output_mode",
-      label: "Output Mode",
-      kind: "select",
-      options: ["Raw Text (no schema)", "Pydantic Model (structured)"],
-    },
-  ],
-  fixtures: {
-    baseline: {
-      label: "Raw Text Output",
-      description: "Without output_pydantic, the agent returns free-form markdown — hard to parse programmatically",
-      log: [
-        { tag: "BOOT", text: "Initializing crew with raw text output" },
-        { tag: "INFO", text: "output_pydantic: None" },
-        { tag: "PROCESS", text: "Agent analyzing logs..." },
-        { tag: "OK", text: "Raw text output generated" },
+      id: "raw-vs-structured",
+      question: "Raw text vs Pydantic model — what's the difference?",
+      controlLabel: "Output Format",
+      options: [
+        {
+          key: "raw",
+          label: "Raw Text (no schema)",
+          description: "Agent returns free-form markdown — hard to parse programmatically",
+        },
+        {
+          key: "pydantic",
+          label: "Pydantic Model (LogAnalysisReport)",
+          description: "Agent returns typed JSON matching the exact schema",
+        },
       ],
-      output: `The main issue is that the deployment failed because the Docker image 
+      defaultLeft: "raw",
+      defaultRight: "pydantic",
+      variants: {
+        raw: {
+          label: "Raw Text Output",
+          description: "Free-form text — unreliable to parse",
+          log: [
+            { tag: "BOOT", text: "Initializing crew with raw text output" },
+            { tag: "INFO", text: "output_pydantic: None" },
+            { tag: "PROCESS", text: "Agent analyzing logs..." },
+            { tag: "OK", text: "Raw text output generated" },
+          ],
+          output: `The main issue is that the deployment failed because the Docker image 
 could not be pulled. The image "myapp:v1.2.3" either doesn't exist or 
 requires authentication.
 
@@ -83,18 +54,18 @@ fragile and unreliable.
 
 >>> type(result.raw)
 <class 'str'>  # just a string, no structure`,
-    },
-    enhanced: {
-      label: "Pydantic Structured Output",
-      description: "With output_pydantic, the agent returns typed JSON matching LogAnalysisReport exactly",
-      log: [
-        { tag: "BOOT", text: "Initializing crew with Pydantic output" },
-        { tag: "INFO", text: "output_pydantic: LogAnalysisReport" },
-        { tag: "PROCESS", text: "Agent analyzing logs..." },
-        { tag: "PROCESS", text: "LLM constrained to return valid JSON schema..." },
-        { tag: "OK", text: "Structured output validated against schema" },
-      ],
-      output: `{
+        },
+        pydantic: {
+          label: "Pydantic Structured Output",
+          description: "Typed JSON matching LogAnalysisReport schema",
+          log: [
+            { tag: "BOOT", text: "Initializing crew with Pydantic output" },
+            { tag: "INFO", text: "output_pydantic: LogAnalysisReport" },
+            { tag: "PROCESS", text: "Agent analyzing logs..." },
+            { tag: "PROCESS", text: "LLM constrained to return valid JSON schema..." },
+            { tag: "OK", text: "Structured output validated against schema" },
+          ],
+          output: `{
   "primary_issue": "Production deployment failed due to ImagePullBackOff",
   "root_cause": "Image myapp:v1.2.3 not found or registry credentials missing",
   "errors": [
@@ -125,8 +96,10 @@ fragile and unreliable.
 4
 >>> type(report)
 <class 'LogAnalysisReport'>  # fully typed!`,
+        },
+      },
     },
-  },
+  ],
   agentConfig: {
     role: "DevOps Log Analyzer",
     goal: "Analyze log files and produce structured analysis reports",
