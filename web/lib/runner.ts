@@ -25,14 +25,24 @@ export async function runFixture(
   await sleep(180);
 
   const lines = fixture.output.split("\n");
-  let acc = "";
   for (const line of lines) {
     await sleep(35);
-    acc += (acc ? "\n" : "") + line;
     cb.onOutputChunk?.(line + "\n");
   }
 
   const result: RunResult = { output: fixture.output, log: fixture.log };
   cb.onDone?.(result);
   return result;
+}
+
+export async function runFixturesPairwise(
+  left: FixturePair,
+  right: FixturePair,
+  leftCb: RunCallbacks,
+  rightCb: RunCallbacks,
+): Promise<[RunResult, RunResult]> {
+  return Promise.all([
+    runFixture(left, leftCb),
+    runFixture(right, rightCb),
+  ]);
 }
