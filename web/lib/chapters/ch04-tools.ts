@@ -13,6 +13,26 @@ export const ch04: ChapterDef = {
     "Move from prompt-only analysis to the notebook's actual DevOps setup: log files on disk and web research for remediation.",
   takeaway:
     "Tools transform agents from text processors into autonomous workers. FileReadTool lets them read any file, EXASearchTool lets them research solutions. The combination of both produces analysis with real, cited solutions.",
+  examples: [
+    {
+      title: "Inline snippet",
+      scenario: "You paste only five log lines into the task prompt.",
+      change: "The agent has no file tool and can only use what you pasted.",
+      outcome: "It can guess the issue, but it cannot see earlier successful deployments.",
+    },
+    {
+      title: "Full log file",
+      scenario: "The agent reads the complete Kubernetes deployment log from disk.",
+      change: "FileReadTool gives it the before-and-after context around the failure.",
+      outcome: "It notices the image changed from v1.2.2 to v1.2.3.",
+    },
+    {
+      title: "Research-backed fix",
+      scenario: "The agent also searches for ImagePullBackOff remediation patterns.",
+      change: "EXASearchTool adds documentation and community fixes to the analysis.",
+      outcome: "The answer moves from diagnosis to practical commands.",
+    },
+  ],
   demos: [
     {
       id: "tools-impact",
