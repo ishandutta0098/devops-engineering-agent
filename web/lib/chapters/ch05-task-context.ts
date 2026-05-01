@@ -5,114 +5,92 @@ export const ch05: ChapterDef = {
   number: 5,
   title: "Task Context & Chaining",
   subtitle: "Pass output from one task as input to the next",
-  objective:
-    "Learn how context wires tasks together — the output of Task A becomes context for Task B.",
-  concepts: [
+  intro:
+    "In a multi-agent system, the output of one agent needs to flow into the next. The context parameter on a Task injects upstream task outputs into the downstream agent's prompt automatically — no manual wiring needed.",
+  takeaway:
+    "Context chaining is what makes multi-agent systems powerful. Without it, each agent works in isolation. With it, downstream agents build on upstream results — producing targeted, specific output instead of generic guesses.",
+  demos: [
     {
-      id: "context-param",
-      title: "The context Parameter",
-      description:
-        "Pass a list of tasks whose output should be available to this task. The downstream agent sees the upstream output in its prompt.",
-      code: `research_task = Task(
-    description="Research solutions for the issues found in the log analysis",
-    expected_output="A list of solutions with implementation steps",
-    agent=solution_researcher,
-    context=[analyze_task],  # receives output from analyze_task
-)`,
-    },
-    {
-      id: "chaining-pattern",
-      title: "Multi-Task Chaining",
-      description:
-        "Chain 3 tasks: analyze → research → write remediation plan. Each task builds on the previous.",
-      code: `# Task 1: Analyze logs
-analyze_task = Task(description="Analyze logs...", agent=log_analyzer)
-
-# Task 2: Research solutions (uses analyze_task output)
-research_task = Task(
-    description="Research solutions...",
-    agent=solution_researcher,
-    context=[analyze_task],
-)
-
-# Task 3: Write plan (uses both previous outputs)
-plan_task = Task(
-    description="Write a remediation plan...",
-    agent=plan_writer,
-    context=[analyze_task, research_task],
-)`,
-    },
-  ],
-  inputSchema: [
-    {
-      key: "chain_mode",
-      label: "Task Chain Mode",
-      kind: "select",
-      options: ["Single Task (no context)", "Chained Tasks (with context)"],
-    },
-  ],
-  fixtures: {
-    baseline: {
-      label: "No Context",
-      description: "Without context, the researcher starts from scratch — no access to the analysis",
-      log: [
-        { tag: "BOOT", text: "Initializing crew: 2 agents, 2 independent tasks" },
-        { tag: "PROCESS", text: "Task 1: Log Analyzer analyzing logs..." },
-        { tag: "OK", text: "Task 1 complete: Found ImagePullBackOff" },
-        { tag: "PROCESS", text: "Task 2: Researcher searching for solutions..." },
-        { tag: "WARN", text: "Researcher has NO context from the analysis" },
-        { tag: "PROCESS", text: "Researcher guessing what to search for..." },
-        { tag: "OK", text: "Task 2 complete: Generic Kubernetes troubleshooting" },
+      id: "context-chaining",
+      question: "What happens when the researcher gets context from the analyzer?",
+      controlLabel: "Context Chaining",
+      options: [
+        {
+          key: "no-context",
+          label: "No Context",
+          description: "Researcher works independently — no access to the analysis",
+        },
+        {
+          key: "with-context",
+          label: "With Context",
+          description: "Researcher receives the analyzer's output via context=[analyze_task]",
+        },
       ],
-      output: `# Researcher Output (No Context)
-Without the analysis output, I'll search for general deployment issues.
+      defaultLeft: "no-context",
+      defaultRight: "with-context",
+      variants: {
+        "no-context": {
+          label: "No Context",
+          description: "Without context, the researcher starts from scratch",
+          log: [
+            { tag: "BOOT", text: "Initializing crew: 2 agents, 2 independent tasks" },
+            { tag: "PROCESS", text: "Task 1: Log Analyzer analyzing logs..." },
+            { tag: "OK", text: "Task 1 complete: Found ImagePullBackOff" },
+            { tag: "PROCESS", text: "Task 2: Researcher searching for solutions..." },
+            { tag: "WARN", text: "Researcher has NO context from the analysis" },
+            { tag: "PROCESS", text: "Researcher guessing what to search for..." },
+            { tag: "OK", text: "Task 2 complete: Generic Kubernetes troubleshooting" },
+          ],
+          output: `# Researcher Output (No Context)
+Without the analysis output, I'll provide general deployment guidance.
 
 ## Generic Solutions
-- Check pod status with \`kubectl get pods\`
-- Review events with \`kubectl describe pod <name>\`
-- Check node resources with \`kubectl top nodes\`
+- Check pod status: kubectl get pods
+- Review events: kubectl describe pod <name>
+- Check node resources: kubectl top nodes
+- Review recent deployments: kubectl rollout history
 
-Note: These are generic suggestions. I don't know the specific error 
+These are generic suggestions. I don't know the specific error
 because the analysis results weren't passed to me.`,
-    },
-    enhanced: {
-      label: "With Context",
-      description:
-        "The researcher receives the analyzer's output via context= and provides targeted solutions",
-      log: [
-        { tag: "BOOT", text: "Initializing crew: 2 agents, 2 chained tasks" },
-        { tag: "PROCESS", text: "Task 1: Log Analyzer analyzing logs..." },
-        { tag: "OK", text: "Task 1 complete: Found ImagePullBackOff" },
-        { tag: "INFO", text: "Passing Task 1 output as context to Task 2..." },
-        { tag: "PROCESS", text: "Task 2: Researcher received analysis context" },
-        { tag: "PROCESS", text: "Searching: 'ImagePullBackOff myapp:v1.2.3 fix'" },
-        { tag: "INFO", text: "Found targeted solutions for ImagePullBackOff" },
-        { tag: "OK", text: "Task 2 complete: Specific remediation steps" },
-      ],
-      output: `# Researcher Output (With Context)
-Based on the analysis: ImagePullBackOff for image \`myapp:v1.2.3\`
+        },
+        "with-context": {
+          label: "With Context",
+          description: "Researcher receives analysis and provides targeted solutions",
+          log: [
+            { tag: "BOOT", text: "Initializing crew: 2 agents, 2 chained tasks" },
+            { tag: "PROCESS", text: "Task 1: Log Analyzer analyzing logs..." },
+            { tag: "OK", text: "Task 1 complete: Found ImagePullBackOff" },
+            { tag: "INFO", text: "Passing Task 1 output as context to Task 2..." },
+            { tag: "PROCESS", text: "Task 2: Researcher received analysis context" },
+            { tag: "PROCESS", text: "Searching: 'ImagePullBackOff myapp:v1.2.3 fix'" },
+            { tag: "INFO", text: "Found targeted solutions for ImagePullBackOff" },
+            { tag: "OK", text: "Task 2 complete: Specific remediation steps" },
+          ],
+          output: `# Researcher Output (With Context)
+Based on the analysis: ImagePullBackOff for image myapp:v1.2.3
 
 ## Targeted Solutions
 
 ### 1. Verify Image Exists
-\`\`\`bash
 docker manifest inspect myapp:v1.2.3
 # If not found, check your CI/CD pipeline built and pushed this tag
-\`\`\`
 
 ### 2. Fix Registry Credentials
-\`\`\`bash
 kubectl create secret docker-registry regcred \\
   --docker-server=registry.example.com \\
-  --docker-username=\$USER \\
-  --docker-password=\$TOKEN
-kubectl patch serviceaccount default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
-\`\`\`
+  --docker-username=$USER \\
+  --docker-password=$TOKEN
+
+kubectl patch serviceaccount default \\
+  -p '{"imagePullSecrets":[{"name":"regcred"}]}'
 
 ### 3. Validate Network Access
-Ensure pods can reach the container registry (check NetworkPolicies, firewall rules).`,
+Ensure pods can reach the container registry.
+Check NetworkPolicies and firewall rules.`,
+        },
+      },
     },
-  },
+  ],
   agentConfig: {
     role: "DevOps Solution Researcher",
     goal: "Find proven solutions and best practices for DevOps issues",
