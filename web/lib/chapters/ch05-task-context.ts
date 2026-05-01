@@ -3,10 +3,14 @@ import type { ChapterDef } from "../schema";
 export const ch05: ChapterDef = {
   slug: "task-context",
   number: 5,
+  phase: "Notebook 01",
+  phaseTitle: "Build the Pipeline",
   title: "Task Context & Chaining",
   subtitle: "Pass output from one task as input to the next",
   intro:
-    "In a multi-agent system, the output of one agent needs to flow into the next. The context parameter on a Task injects upstream task outputs into the downstream agent's prompt automatically — no manual wiring needed.",
+    "Notebook 01's second agent only works well when it receives the first agent's findings. In a multi-agent system, the output of one agent needs to flow into the next. The context parameter on a Task injects upstream task outputs into the downstream agent's prompt automatically — no manual wiring needed.",
+  progression:
+    "Connect the analyzer to the researcher so the search is driven by the actual ImagePullBackOff finding.",
   takeaway:
     "Context chaining is what makes multi-agent systems powerful. Without it, each agent works in isolation. With it, downstream agents build on upstream results — producing targeted, specific output instead of generic guesses.",
   demos: [
