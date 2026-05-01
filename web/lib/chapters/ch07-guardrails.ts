@@ -13,6 +13,26 @@ export const ch07: ChapterDef = {
     "After making the analysis machine-readable, add retries for bad analysis and require concrete commands in the solution.",
   takeaway:
     "Guardrails are your quality gate. Code guardrails give you precise programmatic control. String guardrails let you express policies in plain English. Both force the agent to retry until the output meets your standards.",
+  examples: [
+    {
+      title: "Looks successful",
+      scenario: "A cron log says `completed successfully`, but also says `0 records processed`.",
+      change: "Without a guardrail, the empty errors list is accepted.",
+      outcome: "A real problem can flow into the rest of the pipeline as `no issue found`.",
+    },
+    {
+      title: "Code guardrail",
+      scenario: "The structured report must include at least one real error.",
+      change: "`validate_log_analysis()` rejects reports with an empty `errors` list.",
+      outcome: "The agent retries and looks deeper at the suspicious INFO lines.",
+    },
+    {
+      title: "String guardrail",
+      scenario: "The final remediation plan must be runnable by an engineer.",
+      change: "A natural-language guardrail requires at least 3 copy-pasteable shell commands.",
+      outcome: "The plan becomes actionable instead of generic advice.",
+    },
+  ],
   demos: [
     {
       id: "tricky-logs-guardrail",
