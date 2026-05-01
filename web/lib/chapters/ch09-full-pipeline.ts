@@ -5,104 +5,55 @@ export const ch09: ChapterDef = {
   number: 9,
   title: "The Full Pipeline",
   subtitle: "Combine everything into a production-ready DevOps agent system",
-  objective:
-    "See all concepts working together — agents with tools, chained tasks with context, structured output, guardrails, and crew orchestration.",
-  concepts: [
+  intro:
+    "This is where every concept comes together. Three agents with tools, chained tasks with context, structured output with Pydantic, and guardrails for quality — all orchestrated by a single Crew. Compare the base pipeline with the full production version to see what each feature adds.",
+  takeaway:
+    "Each feature you've learned compounds. Tools give agents capabilities. Context chains their output. Structured output makes it machine-readable. Guardrails ensure quality. Together, they produce a production-grade system that turns raw logs into actionable remediation plans.",
+  demos: [
     {
-      id: "architecture",
-      title: "Pipeline Architecture",
-      description:
-        "Three agents form a pipeline: Log Analyzer → Solution Researcher → Plan Writer. Each has specialized tools, structured output, and guardrails.",
-      code: `# Agent 1: Log Analyzer
-log_analyzer = Agent(
-    role="DevOps Log Analyzer",
-    tools=[FileReadTool()],
-    max_iter=10,
-    max_execution_time=120,
-)
-
-# Agent 2: Solution Researcher
-solution_researcher = Agent(
-    role="DevOps Solution Researcher",
-    tools=[EXASearchTool()],
-    max_iter=15,
-)
-
-# Agent 3: Plan Writer
-plan_writer = Agent(
-    role="DevOps Plan Writer",
-    max_iter=10,
-)`,
-    },
-    {
-      id: "full-crew",
-      title: "Production Crew",
-      description:
-        "The crew wires everything together — structured output on the analysis task, guardrails for validation, context chaining between tasks.",
-      code: `analyze_task = Task(
-    description="Analyze logs at {log_file_path}",
-    output_pydantic=LogAnalysisReport,
-    guardrail=validate_log_analysis,
-    agent=log_analyzer,
-)
-
-research_task = Task(
-    description="Research solutions for identified issues",
-    agent=solution_researcher,
-    context=[analyze_task],
-)
-
-plan_task = Task(
-    description="Write a remediation plan",
-    agent=plan_writer,
-    context=[analyze_task, research_task],
-)
-
-crew = Crew(
-    agents=[log_analyzer, solution_researcher, plan_writer],
-    tasks=[analyze_task, research_task, plan_task],
-    process=Process.sequential,
-    verbose=True,
-    cache=True,
-)`,
-    },
-  ],
-  inputSchema: [
-    {
-      key: "log_data",
-      label: "Log Input",
-      kind: "textarea",
-      rows: 8,
-      placeholder: "Paste Kubernetes, Docker, or application logs here...",
-    },
-    {
-      key: "features",
-      label: "Enabled Features",
-      kind: "select",
+      id: "pipeline-features",
+      question: "How does enabling production features change the pipeline output?",
+      controlLabel: "Feature Set",
       options: [
-        "Base Pipeline (no extras)",
-        "With Structured Output",
-        "With Guardrails",
-        "Full Production (all features)",
+        {
+          key: "base",
+          label: "Base Pipeline",
+          description: "Tools and context only — no structured output or guardrails",
+        },
+        {
+          key: "with-structured",
+          label: "+ Structured Output",
+          description: "Adds Pydantic models for typed, parseable results",
+        },
+        {
+          key: "with-guardrails",
+          label: "+ Guardrails",
+          description: "Adds code guardrail on analysis and string guardrail on solution",
+        },
+        {
+          key: "full",
+          label: "Full Production",
+          description: "All features: tools, context, structured output, guardrails",
+        },
       ],
-    },
-  ],
-  fixtures: {
-    baseline: {
-      label: "Base Pipeline",
-      description: "The pipeline without structured output or guardrails — works but fragile",
-      log: [
-        { tag: "BOOT", text: "Initializing full pipeline (base mode)" },
-        { tag: "INFO", text: "Features: tools=yes, structured_output=no, guardrails=no" },
-        { tag: "PROCESS", text: "Agent 1 (Log Analyzer): Reading and analyzing logs..." },
-        { tag: "OK", text: "Agent 1 complete: Raw text analysis" },
-        { tag: "PROCESS", text: "Agent 2 (Researcher): Searching for solutions..." },
-        { tag: "OK", text: "Agent 2 complete: Solutions found" },
-        { tag: "PROCESS", text: "Agent 3 (Plan Writer): Writing remediation plan..." },
-        { tag: "OK", text: "Agent 3 complete: Plan written" },
-        { tag: "SUCCESS", text: "Pipeline complete (base mode)" },
-      ],
-      output: `# Remediation Plan (Base Pipeline)
+      defaultLeft: "base",
+      defaultRight: "full",
+      variants: {
+        base: {
+          label: "Base Pipeline",
+          description: "Works but fragile — no structure or validation",
+          log: [
+            { tag: "BOOT", text: "Initializing pipeline (base mode)" },
+            { tag: "INFO", text: "Features: tools=yes, structured_output=no, guardrails=no" },
+            { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
+            { tag: "OK", text: "Agent 1 complete: Raw text analysis" },
+            { tag: "PROCESS", text: "Agent 2 (Researcher): Searching..." },
+            { tag: "OK", text: "Agent 2 complete: Solutions found" },
+            { tag: "PROCESS", text: "Agent 3 (Plan Writer): Writing plan..." },
+            { tag: "OK", text: "Agent 3 complete: Plan written" },
+            { tag: "SUCCESS", text: "Pipeline complete (base)" },
+          ],
+          output: `# Remediation Plan (Base Pipeline)
 
 ## Analysis
 The deployment failed. There were image pull errors.
@@ -115,32 +66,107 @@ The deployment failed. There were image pull errors.
 1. Fix the image
 2. Redeploy
 
----
-Note: Without structured output, the analysis is free text.
+Without structured output, the analysis is free text.
 Without guardrails, subtle issues may be missed.
 The plan is vague because upstream data was unstructured.`,
-    },
-    enhanced: {
-      label: "Full Production Pipeline",
-      description: "All features enabled — structured output, guardrails, tools, and context chaining",
-      log: [
-        { tag: "BOOT", text: "Initializing full pipeline (production mode)" },
-        { tag: "INFO", text: "Features: tools=yes, structured_output=yes, guardrails=yes" },
-        { tag: "PROCESS", text: "Agent 1 (Log Analyzer): Reading logs with FileReadTool..." },
-        { tag: "INFO", text: "  Using output_pydantic=LogAnalysisReport" },
-        { tag: "PROCESS", text: "  Constraining output to JSON schema..." },
-        { tag: "GUARDRAIL", text: "validate_log_analysis() → PASSED (4 errors found)" },
-        { tag: "OK", text: "Agent 1 complete: Structured report validated" },
-        { tag: "PROCESS", text: "Agent 2 (Researcher): Context received from Agent 1" },
-        { tag: "INFO", text: "  Searching: 'ImagePullBackOff fix kubernetes'" },
-        { tag: "INFO", text: "  Found 5 targeted solutions" },
-        { tag: "OK", text: "Agent 2 complete: Research with citations" },
-        { tag: "PROCESS", text: "Agent 3 (Plan Writer): Context from Agents 1+2" },
-        { tag: "INFO", text: "  Building prioritized remediation plan..." },
-        { tag: "OK", text: "Agent 3 complete: Production-grade plan" },
-        { tag: "SUCCESS", text: "Pipeline complete — all features active" },
-      ],
-      output: `# Production Remediation Plan
+        },
+        "with-structured": {
+          label: "+ Structured Output",
+          description: "Analysis returns typed JSON — downstream agents get structured data",
+          log: [
+            { tag: "BOOT", text: "Initializing pipeline (+ structured output)" },
+            { tag: "INFO", text: "Features: tools=yes, structured_output=yes, guardrails=no" },
+            { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
+            { tag: "PROCESS", text: "  Constraining output to LogAnalysisReport schema..." },
+            { tag: "OK", text: "Agent 1 complete: Structured JSON report" },
+            { tag: "PROCESS", text: "Agent 2 (Researcher): Received typed analysis..." },
+            { tag: "OK", text: "Agent 2 complete: Targeted solutions" },
+            { tag: "PROCESS", text: "Agent 3 (Plan Writer): Building from structured data..." },
+            { tag: "OK", text: "Agent 3 complete: Better plan" },
+            { tag: "SUCCESS", text: "Pipeline complete (+ structured)" },
+          ],
+          output: `# Remediation Plan (+ Structured Output)
+
+## Incident (from structured analysis)
+Primary Issue: ImagePullBackOff on myapp:v1.2.3
+Root Cause: Registry credentials missing
+Errors: 4 identified
+Components: Pod, Deployment, Service
+
+## Remediation Steps
+1. Create registry secret:
+   kubectl create secret docker-registry regcred ...
+
+2. Patch service account:
+   kubectl patch sa default ...
+
+3. Redeploy:
+   kubectl rollout restart deployment myapp-deployment
+
+Better — structured analysis means the plan has specific details.
+But still no quality validation on the analysis itself.`,
+        },
+        "with-guardrails": {
+          label: "+ Guardrails",
+          description: "Analysis is validated, solutions must include shell commands",
+          log: [
+            { tag: "BOOT", text: "Initializing pipeline (+ guardrails)" },
+            { tag: "INFO", text: "Features: tools=yes, structured_output=yes, guardrails=yes" },
+            { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
+            { tag: "GUARDRAIL", text: "validate_log_analysis() → PASSED (4 errors)" },
+            { tag: "OK", text: "Agent 1 complete: Validated analysis" },
+            { tag: "PROCESS", text: "Agent 2 (Researcher): Searching..." },
+            { tag: "OK", text: "Agent 2 complete: Research done" },
+            { tag: "PROCESS", text: "Agent 3 (Plan Writer): Writing plan..." },
+            { tag: "GUARDRAIL", text: "String guardrail: checking for ≥3 shell commands..." },
+            { tag: "GUARDRAIL", text: "String guardrail → PASSED" },
+            { tag: "OK", text: "Agent 3 complete: Validated plan" },
+            { tag: "SUCCESS", text: "Pipeline complete (+ guardrails)" },
+          ],
+          output: `# Remediation Plan (+ Guardrails)
+
+## Validated Analysis
+Primary Issue: ImagePullBackOff on myapp:v1.2.3
+Errors: 4 (validated by code guardrail)
+
+## Remediation (validated: ≥3 shell commands)
+
+### Step 1: Verify image
+docker manifest inspect myapp:v1.2.3
+
+### Step 2: Create secret
+kubectl create secret docker-registry regcred \\
+  --docker-server=registry.example.com \\
+  --docker-username=$USER --docker-password=$TOKEN
+
+### Step 3: Patch SA
+kubectl patch sa default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+
+### Step 4: Redeploy
+kubectl rollout restart deployment myapp-deployment
+
+Guardrails ensured both the analysis quality AND the plan quality.`,
+        },
+        full: {
+          label: "Full Production Pipeline",
+          description: "All features active — tools, context, structured output, guardrails",
+          log: [
+            { tag: "BOOT", text: "Initializing pipeline (FULL PRODUCTION)" },
+            { tag: "INFO", text: "Features: ALL ENABLED" },
+            { tag: "PROCESS", text: "Agent 1 (Analyzer): FileReadTool reading logs..." },
+            { tag: "PROCESS", text: "  output_pydantic=LogAnalysisReport" },
+            { tag: "GUARDRAIL", text: "validate_log_analysis() → PASSED (4 errors)" },
+            { tag: "OK", text: "Agent 1 complete: Structured + validated" },
+            { tag: "PROCESS", text: "Agent 2 (Researcher): context from Agent 1" },
+            { tag: "INFO", text: "  EXASearchTool: 'ImagePullBackOff fix kubernetes'" },
+            { tag: "INFO", text: "  Found 5 targeted solutions with sources" },
+            { tag: "OK", text: "Agent 2 complete: Research with citations" },
+            { tag: "PROCESS", text: "Agent 3 (Plan Writer): context from Agents 1+2" },
+            { tag: "GUARDRAIL", text: "String guardrail → PASSED (4 shell commands)" },
+            { tag: "OK", text: "Agent 3 complete: Production-grade plan" },
+            { tag: "SUCCESS", text: "Pipeline complete — ALL FEATURES ACTIVE" },
+          ],
+          output: `# Production Remediation Plan
 
 ## Incident Summary
 | Field | Value |
@@ -148,47 +174,43 @@ The plan is vague because upstream data was unstructured.`,
 | Primary Issue | ImagePullBackOff on myapp:v1.2.3 |
 | Root Cause | Registry credentials missing/expired |
 | Severity | P0 — Production down |
+| Errors | 4 (validated by guardrail) |
 | Affected | Pod, Deployment, Service |
 
-## Structured Analysis (from Pydantic output)
-\`\`\`json
-{
-  "primary_issue": "Production deployment failed due to ImagePullBackOff",
-  "errors": ["Image pull denied", "ImagePullBackOff", "Deadline exceeded", "Rollback initiated"],
-  "affected_components": ["Pod", "Deployment", "Service"]
-}
-\`\`\`
+## P0: Immediate (ETA: 15 min)
+1. Verify image:
+   docker manifest inspect myapp:v1.2.3
 
-## Remediation Steps
-
-### P0: Immediate (ETA: 15 min)
-1. Create registry secret:
-   \`\`\`bash
+2. Create registry secret:
    kubectl create secret docker-registry regcred \\
      --docker-server=registry.example.com \\
      --docker-username=$USER --docker-password=$TOKEN
-   \`\`\`
-2. Patch default SA: \`kubectl patch sa default -p '{"imagePullSecrets":[{"name":"regcred"}]}'\`
-3. Redeploy: \`kubectl rollout restart deployment myapp-deployment\`
 
-### P1: Prevention (ETA: 1 day)
+3. Patch default SA:
+   kubectl patch sa default \\
+     -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+
+4. Redeploy:
+   kubectl rollout restart deployment myapp-deployment
+
+## P1: Prevention (ETA: 1 day)
 - Add imagePullSecrets to Helm chart defaults
 - CI gate: verify image exists before deploy
-- Rotate registry credentials quarterly
+- Credential rotation quarterly
 
-### P2: Monitoring (ETA: 1 week)
+## P2: Monitoring (ETA: 1 week)
 - Alert on ImagePullBackOff events
-- Dashboard for deployment success rate
+- Deployment success rate dashboard
 - Runbook link in PagerDuty
 
 ## Verification
-\`\`\`bash
 kubectl get pods -l app=myapp -w
 kubectl rollout status deployment myapp-deployment --timeout=120s
-curl -f https://myapp.example.com/healthz
-\`\`\``,
+curl -f https://myapp.example.com/healthz`,
+        },
+      },
     },
-  },
+  ],
   agentConfig: {
     role: "DevOps Plan Writer",
     goal: "Create comprehensive, production-grade remediation plans",
