@@ -14,21 +14,23 @@ type ParamConfig = {
   max_execution_time: number | null;
 };
 
-const PRESETS: { label: string; config: ParamConfig; fixtureKey: "baseline" | "enhanced" }[] = [
+const demo = ch03.demos[0];
+
+const PRESETS: { label: string; config: ParamConfig; variantKey: string }[] = [
   {
     label: "Defaults (Unbounded)",
     config: { max_iter: 20, max_rpm: null, max_execution_time: null },
-    fixtureKey: "baseline",
+    variantKey: "unbounded",
   },
   {
     label: "Conservative",
-    config: { max_iter: 10, max_rpm: 20, max_execution_time: 300 },
-    fixtureKey: "enhanced",
+    config: { max_iter: 5, max_rpm: 10, max_execution_time: 120 },
+    variantKey: "tight",
   },
   {
-    label: "Aggressive",
-    config: { max_iter: 5, max_rpm: 10, max_execution_time: 120 },
-    fixtureKey: "enhanced",
+    label: "Very Tight",
+    config: { max_iter: 3, max_rpm: 5, max_execution_time: 60 },
+    variantKey: "minimal",
   },
 ];
 
@@ -44,7 +46,7 @@ export function ParameterControls() {
     setState("running");
 
     const preset = PRESETS[activePreset];
-    const fixture = ch03.fixtures[preset.fixtureKey];
+    const fixture = demo.variants[preset.variantKey];
 
     await runFixture(fixture, {
       onLog: (line) => setLogs((prev) => [...prev, line]),
