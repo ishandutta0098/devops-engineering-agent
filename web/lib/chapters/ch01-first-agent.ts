@@ -13,6 +13,26 @@ export const ch01: ChapterDef = {
     "Start here by shaping the DevOps Log Analyzer persona before giving it a task or tools.",
   takeaway:
     "A well-defined role, goal, and backstory is the difference between a generic chatbot and a domain expert. The more specific the persona, the deeper and more actionable the output.",
+  examples: [
+    {
+      title: "Generic assistant",
+      scenario: "You ask a broad AI helper to inspect deployment logs.",
+      change: "The role only says `AI Assistant`, so it has no DevOps point of view.",
+      outcome: "It notices an error, but the recommendation stays vague.",
+    },
+    {
+      title: "DevOps specialist",
+      scenario: "You ask a DevOps Log Analyzer to inspect the same logs.",
+      change: "The role and goal focus the agent on Kubernetes failures and root causes.",
+      outcome: "It identifies ImagePullBackOff and explains the rollout cascade.",
+    },
+    {
+      title: "Expert backstory",
+      scenario: "You add production incident experience to the agent's backstory.",
+      change: "The agent knows to look for registry auth, rollout deadlines, and service impact.",
+      outcome: "The output becomes a more useful incident analysis instead of a short summary.",
+    },
+  ],
   demos: [
     {
       id: "role-impact",
