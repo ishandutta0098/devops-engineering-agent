@@ -39,7 +39,7 @@ export default async function ChapterPage({
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="mb-10">
             <span className="font-code text-amber text-label-caps uppercase tracking-widest">
-              Chapter {String(chapter.number).padStart(2, "0")}
+              {chapter.phase} / Chapter {String(chapter.number).padStart(2, "0")}
             </span>
             <h1 className="font-headline text-headline-lg text-ink mt-2">
               {chapter.title}
@@ -49,9 +49,21 @@ export default async function ChapterPage({
             </p>
           </div>
 
-          <div className="bg-surface/50 border border-hairline rounded-lg p-6 mb-12">
+          <div className="bg-surface/50 border border-hairline rounded-lg p-6 mb-6">
+            <div className="font-code text-[10px] text-amber uppercase tracking-widest mb-2">
+              {chapter.phaseTitle}
+            </div>
             <p className="font-body text-body-md text-ink leading-relaxed">
               {chapter.intro}
+            </p>
+          </div>
+
+          <div className="bg-surface-low border border-hairline rounded-lg p-5 mb-12">
+            <h2 className="font-headline text-label-caps uppercase text-gray3 tracking-widest mb-2">
+              Progression
+            </h2>
+            <p className="font-body text-sm text-gray2 leading-relaxed">
+              {chapter.progression}
             </p>
           </div>
 
