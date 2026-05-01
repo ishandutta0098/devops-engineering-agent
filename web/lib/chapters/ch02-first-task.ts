@@ -5,90 +5,64 @@ export const ch02: ChapterDef = {
   number: 2,
   title: "Your First Task",
   subtitle: "Give your agent a specific job with a description and expected output",
-  objective:
-    "Learn how a Task is the unit of work — it tells the agent what to do and what to produce.",
-  concepts: [
+  intro:
+    "An agent without a job does nothing. A Task tells the agent exactly what to do and what to produce. The expected_output field is especially powerful — the more specific you make it, the more structured and useful the result.",
+  takeaway:
+    "The expected_output field is your strongest lever for controlling output quality. Vague instructions produce vague results. Specific structure produces specific, actionable analysis.",
+  demos: [
     {
-      id: "description",
-      title: "Task Description",
-      description:
-        "The detailed instruction for the agent. You can embed data directly in the description string.",
-      code: `analyze_task = Task(
-    description=f"Analyze the following log data to identify issues:\\n{LOG_INPUT}",
-    expected_output="""A detailed analysis report containing:
-    - Primary issue description
-    - Key error messages and codes
-    - Timeline of failure events
-    - Root cause analysis
-    - Affected components""",
-    agent=log_analyzer,
-)`,
-    },
-    {
-      id: "expected-output",
-      title: "Expected Output",
-      description:
-        "Tells the LLM what format and content you want back. The more specific, the better the result.",
-      code: `expected_output="""A detailed analysis report containing:
-    - Primary issue description
-    - Key error messages and codes
-    - Timeline of failure events
-    - Root cause analysis
-    - Affected components"""`,
-    },
-  ],
-  inputSchema: [
-    {
-      key: "log_data",
-      label: "Log Data",
-      kind: "textarea",
-      rows: 8,
-      placeholder: "[2024-01-15 14:32:15.123] INFO: Starting deployment...",
-    },
-    {
-      key: "expected_output",
-      label: "Expected Output Format",
-      kind: "textarea",
-      rows: 3,
-      placeholder: "A detailed analysis report containing...",
-    },
-  ],
-  fixtures: {
-    baseline: {
-      label: "Vague Expected Output",
-      description: "A task with minimal expected_output returns unstructured text",
-      log: [
-        { tag: "BOOT", text: "Initializing crew with 1 agent, 1 task" },
-        { tag: "INFO", text: "Task: Analyze logs" },
-        { tag: "INFO", text: "Expected output: 'A report'" },
-        { tag: "PROCESS", text: "Agent processing task..." },
-        { tag: "OK", text: "Task complete" },
+      id: "expected-output-quality",
+      question: "How does the expected_output detail affect result quality?",
+      controlLabel: "Expected Output Spec",
+      options: [
+        {
+          key: "vague",
+          label: "Vague: 'A report'",
+          description: "Minimal instruction — just asks for a report",
+        },
+        {
+          key: "detailed",
+          label: "Detailed: 5-section structure",
+          description: "Specifies exactly what sections and content to include",
+        },
       ],
-      output: `There are errors in the deployment logs. The main issue is that the Docker image could not be pulled. This caused the pods to fail and the deployment was rolled back. You should fix the image reference and try deploying again.`,
-    },
-    enhanced: {
-      label: "Detailed Expected Output",
-      description:
-        "A task with specific expected_output produces structured, comprehensive analysis",
-      log: [
-        { tag: "BOOT", text: "Initializing crew with 1 agent, 1 task" },
-        { tag: "INFO", text: "Task: Analyze Kubernetes deployment logs" },
-        { tag: "INFO", text: "Expected output: structured report with 5 sections" },
-        { tag: "PROCESS", text: "Agent reading log data..." },
-        { tag: "PROCESS", text: "Extracting error timeline..." },
-        { tag: "PROCESS", text: "Identifying affected components..." },
-        { tag: "PROCESS", text: "Performing root cause analysis..." },
-        { tag: "OK", text: "Structured report generated" },
-      ],
-      output: `# Deployment Failure Analysis
+      defaultLeft: "vague",
+      defaultRight: "detailed",
+      variants: {
+        vague: {
+          label: "Vague Expected Output",
+          description: "With minimal expected_output, the agent produces unstructured text",
+          log: [
+            { tag: "BOOT", text: "Initializing crew with 1 agent, 1 task" },
+            { tag: "INFO", text: "Task: Analyze logs" },
+            { tag: "INFO", text: "Expected output: 'A report'" },
+            { tag: "PROCESS", text: "Agent processing task..." },
+            { tag: "OK", text: "Task complete" },
+          ],
+          output: `There are errors in the deployment logs. The main issue is that the Docker image could not be pulled. This caused the pods to fail and the deployment was rolled back. You should fix the image reference and try deploying again.`,
+        },
+        detailed: {
+          label: "Detailed Expected Output",
+          description: "Specific expected_output produces structured, comprehensive analysis",
+          log: [
+            { tag: "BOOT", text: "Initializing crew with 1 agent, 1 task" },
+            { tag: "INFO", text: "Task: Analyze Kubernetes deployment logs" },
+            { tag: "INFO", text: "Expected output: structured report with 5 sections" },
+            { tag: "PROCESS", text: "Agent reading log data..." },
+            { tag: "PROCESS", text: "Extracting error timeline..." },
+            { tag: "PROCESS", text: "Identifying affected components..." },
+            { tag: "PROCESS", text: "Performing root cause analysis..." },
+            { tag: "OK", text: "Structured report generated" },
+          ],
+          output: `# Deployment Failure Analysis
 
 ## Primary Issue
 Production deployment of myapp-deployment failed due to container image pull failure.
 
 ## Key Error Messages
-- \`Failed to pull image "myapp:v1.2.3": pull access denied\`
-- \`Pod status: ImagePullBackOff\`
-- \`Deployment rollout failed: exceeded progress deadline\`
+- Failed to pull image "myapp:v1.2.3": pull access denied
+- Pod status: ImagePullBackOff
+- Deployment rollout failed: exceeded progress deadline
 
 ## Timeline of Events
 1. 14:32:15 — Deployment initiated
@@ -100,7 +74,7 @@ Production deployment of myapp-deployment failed due to container image pull fai
 7. 14:32:29 — Rollback initiated
 
 ## Root Cause Analysis
-The image \`myapp:v1.2.3\` could not be pulled from the registry. This is likely due to:
+The image myapp:v1.2.3 could not be pulled from the registry. This is likely due to:
 - Incorrect image tag
 - Missing registry credentials
 - Private registry without imagePullSecrets configured
@@ -109,8 +83,10 @@ The image \`myapp:v1.2.3\` could not be pulled from the registry. This is likely
 - Pod: myapp-deployment-7b8c9d5f4-abc12
 - Deployment: myapp-deployment
 - Service: myapp-service`,
+        },
+      },
     },
-  },
+  ],
   agentConfig: {
     role: "DevOps Log Analyzer",
     goal: "Analyze log files to identify and extract specific issues, errors, and failure patterns",
