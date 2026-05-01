@@ -13,12 +13,12 @@ import { ch09 } from "./chapters/ch09-full-pipeline";
 export const chapters: ChapterDef[] = [
   ch01,
   ch02,
-  ch03,
   ch04,
+  ch03,
   ch05,
+  ch08,
   ch06,
   ch07,
-  ch08,
   ch09,
 ];
 
