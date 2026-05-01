@@ -13,6 +13,26 @@ export const ch09: ChapterDef = {
     "This final chapter should feel like the consolidated notebook cell: one run that produces analysis, investigation, and a validated solution plan.",
   takeaway:
     "Each feature you've learned compounds. Tools give agents capabilities. Context chains their output. Structured output makes it machine-readable. Guardrails ensure quality. Together, they produce a production-grade system that turns raw logs into actionable remediation plans.",
+  examples: [
+    {
+      title: "Base pipeline",
+      scenario: "The crew runs with tools and context, but no structured output or guardrails.",
+      change: "Each agent can work, but outputs are mostly free text.",
+      outcome: "The result is useful, but weaker for automation and quality checks.",
+    },
+    {
+      title: "Structured pipeline",
+      scenario: "The analyzer returns `task_outputs/log_analysis.json`.",
+      change: "Downstream agents receive a stable issue, root cause, errors, and timeline.",
+      outcome: "The plan becomes more specific because upstream data is dependable.",
+    },
+    {
+      title: "Production pipeline",
+      scenario: "The full run uses tools, context, structured output, and guardrails.",
+      change: "Bad analysis is rejected, and the solution must include runnable commands.",
+      outcome: "The final artifact is closer to a real incident runbook.",
+    },
+  ],
   demos: [
     {
       id: "pipeline-features",
