@@ -13,6 +13,26 @@ export const ch02: ChapterDef = {
     "Now that the analyzer has a persona, give it the same clear log-analysis job the notebook builds toward.",
   takeaway:
     "The expected_output field is your strongest lever for controlling output quality. Vague instructions produce vague results. Specific structure produces specific, actionable analysis.",
+  examples: [
+    {
+      title: "Vague report",
+      scenario: "The task only asks the agent to `analyze logs` and return `a report`.",
+      change: "No sections or success criteria are provided.",
+      outcome: "The answer is readable, but it misses timeline, components, and verification detail.",
+    },
+    {
+      title: "Structured report",
+      scenario: "The task asks for primary issue, errors, timeline, root cause, and affected components.",
+      change: "The expected output tells the agent exactly what to include.",
+      outcome: "The output becomes easier to scan and easier to pass to the next task.",
+    },
+    {
+      title: "Incident-ready task",
+      scenario: "A teammate needs to act on the analysis during a failed deployment.",
+      change: "The task requires concrete evidence from the log, not just a diagnosis.",
+      outcome: "The report becomes useful for handoff, review, and remediation planning.",
+    },
+  ],
   demos: [
     {
       id: "expected-output-quality",
