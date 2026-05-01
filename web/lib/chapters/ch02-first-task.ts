@@ -3,10 +3,14 @@ import type { ChapterDef } from "../schema";
 export const ch02: ChapterDef = {
   slug: "first-task",
   number: 2,
+  phase: "Notebook 01",
+  phaseTitle: "Build the Pipeline",
   title: "Your First Task",
   subtitle: "Give your agent a specific job with a description and expected output",
   intro:
-    "An agent without a job does nothing. A Task tells the agent exactly what to do and what to produce. The expected_output field is especially powerful — the more specific you make it, the more structured and useful the result.",
+    "Notebook 01 next turns the agent into useful work with a Task. A Task tells the agent exactly what to do and what to produce. The expected_output field is especially powerful — the more specific you make it, the more structured and useful the result.",
+  progression:
+    "Now that the analyzer has a persona, give it the same clear log-analysis job the notebook builds toward.",
   takeaway:
     "The expected_output field is your strongest lever for controlling output quality. Vague instructions produce vague results. Specific structure produces specific, actionable analysis.",
   demos: [
