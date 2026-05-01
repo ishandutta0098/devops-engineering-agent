@@ -2,11 +2,15 @@ import type { ChapterDef } from "../schema";
 
 export const ch07: ChapterDef = {
   slug: "guardrails",
-  number: 7,
+  number: 8,
+  phase: "Notebook 02",
+  phaseTitle: "Harden the Pipeline",
   title: "Guardrails",
   subtitle: "Validate agent output with code-based and natural-language guardrails",
   intro:
-    "Structured output guarantees the shape is correct, but not the content. An agent can return a valid LogAnalysisReport with zero errors — even when there ARE errors hiding in INFO-level logs. Guardrails validate the content and force retries when quality is insufficient.",
+    "Notebook 02 then adds quality gates. Structured output guarantees the shape is correct, but not the content. An agent can return a valid LogAnalysisReport with zero errors — even when there ARE errors hiding in INFO-level logs. Guardrails validate the content and force retries when quality is insufficient.",
+  progression:
+    "After making the analysis machine-readable, add retries for bad analysis and require concrete commands in the solution.",
   takeaway:
     "Guardrails are your quality gate. Code guardrails give you precise programmatic control. String guardrails let you express policies in plain English. Both force the agent to retry until the output meets your standards.",
   demos: [
