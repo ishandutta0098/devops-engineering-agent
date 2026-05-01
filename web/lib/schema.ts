@@ -42,9 +42,12 @@ export type DemoDef = {
 export type ChapterDef = {
   slug: string;
   number: number;
+  phase: "Notebook 01" | "Notebook 02";
+  phaseTitle: string;
   title: string;
   subtitle: string;
   intro: string;
+  progression: string;
   takeaway: string;
   demos: DemoDef[];
   agentConfig: {
