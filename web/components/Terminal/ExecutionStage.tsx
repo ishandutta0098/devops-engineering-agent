@@ -22,8 +22,11 @@ export function ExecutionStage({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" });
-  }, [logs.length, output]);
+    ref.current?.scrollTo({
+      top: ref.current.scrollHeight,
+      behavior: state === "running" ? "auto" : "smooth",
+    });
+  }, [logs.length, output, state]);
 
   return (
     <div
