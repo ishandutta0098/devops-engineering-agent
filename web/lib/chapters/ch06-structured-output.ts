@@ -13,6 +13,26 @@ export const ch06: ChapterDef = {
     "Now that the full crew works, upgrade the first task from markdown analysis to a `LogAnalysisReport` JSON artifact.",
   takeaway:
     "Structured output transforms agent output from a string you have to parse into a typed object you can use directly. report.primary_issue beats regex-parsing a wall of markdown every time.",
+  examples: [
+    {
+      title: "Free-text analysis",
+      scenario: "The analyzer returns a markdown paragraph about the failed deployment.",
+      change: "There is no schema, so fields like root cause and errors are just text.",
+      outcome: "A human can read it, but code cannot safely use it without parsing.",
+    },
+    {
+      title: "Typed report",
+      scenario: "The analyzer returns a `LogAnalysisReport` with fixed fields.",
+      change: "`output_pydantic` requires JSON with `primary_issue`, `root_cause`, and `errors`.",
+      outcome: "The next task can depend on exact fields instead of guessing from markdown.",
+    },
+    {
+      title: "Saved artifact",
+      scenario: "The production pipeline writes `task_outputs/log_analysis.json`.",
+      change: "The analysis is stored as structured data, not only as terminal text.",
+      outcome: "The artifact can be reviewed, reused, or passed downstream.",
+    },
+  ],
   demos: [
     {
       id: "raw-vs-structured",
