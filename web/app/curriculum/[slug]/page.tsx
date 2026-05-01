@@ -67,6 +67,47 @@ export default async function ChapterPage({
             </p>
           </div>
 
+          {chapter.examples?.length ? (
+            <section className="mb-12">
+              <div className="mb-5">
+                <h2 className="font-headline text-headline-md text-ink">
+                  Clear Examples
+                </h2>
+                <p className="font-body text-sm text-gray2 mt-2">
+                  Use these scenarios to understand what changes before you run
+                  the demo.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                {chapter.examples.map((example) => (
+                  <article
+                    key={example.title}
+                    className="bg-surface border border-hairline rounded-lg p-5"
+                  >
+                    <h3 className="font-headline text-headline-sm text-ink mb-3">
+                      {example.title}
+                    </h3>
+                    <div className="space-y-3 font-body text-sm leading-relaxed">
+                      <p className="text-gray2">
+                        <span className="text-amber font-bold">Scenario:</span>{" "}
+                        {example.scenario}
+                      </p>
+                      <p className="text-gray2">
+                        <span className="text-amber font-bold">Change:</span>{" "}
+                        {example.change}
+                      </p>
+                      <p className="text-gray2">
+                        <span className="text-amber font-bold">Outcome:</span>{" "}
+                        {example.outcome}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
           <section className="space-y-12 mb-16">
             {chapter.demos.map((demo) => (
               <DemoStation key={demo.id} demo={demo} />
