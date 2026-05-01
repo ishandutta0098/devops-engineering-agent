@@ -2,11 +2,15 @@ import type { ChapterDef } from "../schema";
 
 export const ch03: ChapterDef = {
   slug: "agent-parameters",
-  number: 3,
+  number: 4,
+  phase: "Notebook 01",
+  phaseTitle: "Build the Pipeline",
   title: "Agent Parameters",
   subtitle: "Control iteration limits, rate limiting, and timeouts",
   intro:
-    "Agents can spiral — calling tools endlessly, burning through API quotas, or running for minutes on a simple task. Parameters like max_iter, max_rpm, and max_execution_time give you operational control to prevent this.",
+    "Notebook 01 also tunes the agents so the tool-using pipeline remains controlled. Agents can spiral — calling tools endlessly, burning through API quotas, or running for minutes on a simple task. Parameters like max_iter, max_rpm, and max_execution_time give you operational control to prevent this.",
+  progression:
+    "After adding file and search tools, cap the agents so the pipeline can run predictably.",
   takeaway:
     "Always set explicit limits in production. max_iter prevents runaway reasoning loops, max_rpm avoids rate-limit errors, and max_execution_time is your hard kill switch. A constrained agent is a reliable agent.",
   demos: [
