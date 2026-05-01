@@ -13,6 +13,26 @@ export const ch08: ChapterDef = {
     "This is the Notebook 01 finish line: analysis, investigation, and remediation plan working as one pipeline.",
   takeaway:
     "A 3-agent crew produces fundamentally better output than a single agent trying to do everything. Each agent focuses on its specialty and passes structured results downstream. The whole is greater than the sum of its parts.",
+  examples: [
+    {
+      title: "One agent",
+      scenario: "Only the analyzer runs against the deployment log.",
+      change: "The crew has no researcher or plan writer.",
+      outcome: "You get a root cause, but no researched fix or ordered runbook.",
+    },
+    {
+      title: "Two agents",
+      scenario: "The analyzer hands the issue to a researcher.",
+      change: "The crew can now find known solutions for ImagePullBackOff.",
+      outcome: "You get fixes, but still need someone to prioritize and verify them.",
+    },
+    {
+      title: "Three agents",
+      scenario: "Analyzer, researcher, and plan writer run in sequence.",
+      change: "Each task contributes one artifact to the final answer.",
+      outcome: "The pipeline produces analysis, investigation, and a remediation plan.",
+    },
+  ],
   demos: [
     {
       id: "crew-size",
