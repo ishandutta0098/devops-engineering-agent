@@ -11,6 +11,8 @@ import { PipelineBar } from "./PipelineBar";
 import { FeatureChecklist } from "./FeatureChecklist";
 import { Play, RotateCcw } from "lucide-react";
 
+const demo = ch09.demos[0];
+
 const AGENTS = [
   {
     role: "DevOps Log Analyzer",
@@ -29,8 +31,13 @@ const AGENTS = [
   },
 ];
 
+const MODE_MAP: Record<string, { variantKey: string; featureUpTo: number }> = {
+  base: { variantKey: "base", featureUpTo: 4 },
+  full: { variantKey: "full", featureUpTo: 9 },
+};
+
 export function FullPipelinePlayground() {
-  const [mode, setMode] = useState<"baseline" | "enhanced">("enhanced");
+  const [mode, setMode] = useState<"base" | "full">("full");
   const [state, setState] = useState<StageState>("idle");
   const [logs, setLogs] = useState<LogLineType[]>([]);
   const [output, setOutput] = useState("");
@@ -42,13 +49,11 @@ export function FullPipelinePlayground() {
     setState("running");
     setActiveStep(1);
 
-    const fixture = ch09.fixtures[mode];
+    const fixture = demo.variants[MODE_MAP[mode].variantKey];
 
-    let logCount = 0;
     await runFixture(fixture, {
       onLog: (line) => {
         setLogs((prev) => [...prev, line]);
-        logCount++;
         if (line.text.includes("Agent 2") || line.text.includes("Task 2")) setActiveStep(2);
         if (line.text.includes("Agent 3") || line.text.includes("Task 3")) setActiveStep(3);
       },
@@ -87,9 +92,9 @@ export function FullPipelinePlayground() {
                   Mode:
                 </span>
                 <button
-                  onClick={() => setMode("baseline")}
+                  onClick={() => setMode("base")}
                   className={`px-3 py-1.5 rounded font-code text-xs transition-colors ${
-                    mode === "baseline"
+                    mode === "base"
                       ? "bg-[#FF5F57]/20 text-[#FF5F57] border border-[#FF5F57]/40"
                       : "bg-surface text-gray3 border border-hairline hover:text-ink"
                   }`}
@@ -97,9 +102,9 @@ export function FullPipelinePlayground() {
                   Base Pipeline
                 </button>
                 <button
-                  onClick={() => setMode("enhanced")}
+                  onClick={() => setMode("full")}
                   className={`px-3 py-1.5 rounded font-code text-xs transition-colors ${
-                    mode === "enhanced"
+                    mode === "full"
                       ? "bg-amber/20 text-amber border border-amber/40"
                       : "bg-surface text-gray3 border border-hairline hover:text-ink"
                   }`}
@@ -133,7 +138,7 @@ export function FullPipelinePlayground() {
           <ExecutionStage state={state} logs={logs} output={output} />
         </div>
 
-        <FeatureChecklist enabledUpTo={mode === "enhanced" ? 9 : 4} />
+        <FeatureChecklist enabledUpTo={MODE_MAP[mode].featureUpTo} />
       </div>
     </div>
   );
