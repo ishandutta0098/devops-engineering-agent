@@ -2,11 +2,15 @@ import type { ChapterDef } from "../schema";
 
 export const ch04: ChapterDef = {
   slug: "tools",
-  number: 4,
+  number: 3,
+  phase: "Notebook 01",
+  phaseTitle: "Build the Pipeline",
   title: "Adding Tools",
   subtitle: "Give agents real-world capabilities with FileReadTool and EXASearchTool",
   intro:
-    "Without tools, agents can only work with data you paste into the task description. Tools like FileReadTool and EXASearchTool let agents read files, search the web, and access real-world data autonomously.",
+    "Notebook 01 then gives the pipeline real inputs. Without tools, agents can only work with data you paste into the task description. Tools like FileReadTool and EXASearchTool let agents read files, search the web, and access real-world data autonomously.",
+  progression:
+    "Move from prompt-only analysis to the notebook's actual DevOps setup: log files on disk and web research for remediation.",
   takeaway:
     "Tools transform agents from text processors into autonomous workers. FileReadTool lets them read any file, EXASearchTool lets them research solutions. The combination of both produces analysis with real, cited solutions.",
   demos: [
