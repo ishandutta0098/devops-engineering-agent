@@ -3,10 +3,14 @@ import type { ChapterDef } from "../schema";
 export const ch01: ChapterDef = {
   slug: "first-agent",
   number: 1,
+  phase: "Notebook 01",
+  phaseTitle: "Build the Pipeline",
   title: "Your First Agent",
   subtitle: "Define a specialized AI worker with a role, goal, and backstory",
   intro:
-    "An Agent is the atomic unit of CrewAI — a persona that guides the LLM's behavior. The role tells it what kind of expert to be, the goal orients its reasoning, and the backstory shapes its depth. Watch how changing these dramatically alters the output.",
+    "Notebook 01 starts with the atomic unit of CrewAI: an Agent. The role tells it what kind of expert to be, the goal orients its reasoning, and the backstory shapes its depth. Watch how changing these dramatically alters the output.",
+  progression:
+    "Start here by shaping the DevOps Log Analyzer persona before giving it a task or tools.",
   takeaway:
     "A well-defined role, goal, and backstory is the difference between a generic chatbot and a domain expert. The more specific the persona, the deeper and more actionable the output.",
   demos: [
