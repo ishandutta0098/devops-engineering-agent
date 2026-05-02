@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import type { DemoDef, LogLine as LogLineType } from "@/lib/schema";
 import { runFixturesPairwise } from "@/lib/runner";
 import { ExecutionStage, type StageState } from "@/components/Terminal/ExecutionStage";
-import { Play, RotateCcw } from "lucide-react";
+import { FileText, Play, RotateCcw } from "lucide-react";
 
 export function DemoStation({ demo }: { demo: DemoDef }) {
   const [leftKey, setLeftKey] = useState(demo.defaultLeft);
@@ -58,6 +58,23 @@ export function DemoStation({ demo }: { demo: DemoDef }) {
       <h3 className="font-headline text-headline-sm text-ink">
         {demo.question}
       </h3>
+
+      {demo.inputFile ? (
+        <div className="bg-night/60 border border-hairline rounded p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="w-3.5 h-3.5 text-amber" />
+            <span className="font-code text-[10px] tracking-widest uppercase text-amber">
+              Input handed to the agent
+            </span>
+            <span className="font-code text-[11px] text-gray3 ml-auto">
+              {demo.inputFile.filename}
+            </span>
+          </div>
+          <pre className="font-code text-[11px] leading-relaxed text-gray2 whitespace-pre overflow-auto max-h-[160px]">
+            {demo.inputFile.preview}
+          </pre>
+        </div>
+      ) : null}
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -127,6 +144,11 @@ export function DemoStation({ demo }: { demo: DemoDef }) {
               {leftVariant.label}
             </span>
           </div>
+          {leftVariant.paramSnippet ? (
+            <pre className="bg-night/60 border border-[#FF5F57]/30 rounded p-3 mb-2 font-code text-[11px] leading-relaxed text-ink whitespace-pre-wrap">
+              {leftVariant.paramSnippet}
+            </pre>
+          ) : null}
           <ExecutionStage
             state={state}
             logs={leftLogs}
@@ -143,6 +165,11 @@ export function DemoStation({ demo }: { demo: DemoDef }) {
               {rightVariant.label}
             </span>
           </div>
+          {rightVariant.paramSnippet ? (
+            <pre className="bg-night/60 border border-amber/30 rounded p-3 mb-2 font-code text-[11px] leading-relaxed text-ink whitespace-pre-wrap">
+              {rightVariant.paramSnippet}
+            </pre>
+          ) : null}
           <ExecutionStage
             state={state}
             logs={rightLogs}
