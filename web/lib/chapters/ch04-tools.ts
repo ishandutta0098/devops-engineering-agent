@@ -1,157 +1,207 @@
 import type { ChapterDef } from "../schema";
+import { KUBERNETES_LOG, DATABASE_LOG, CRON_LOG } from "../log-files";
+
+const KUBERNETES_LOG_PREVIEW = KUBERNETES_LOG.split("\n").slice(0, 8).join("\n") + "\n  ... 13 more lines ...";
 
 export const ch04: ChapterDef = {
   slug: "tools",
   number: 3,
   phase: "Notebook 01",
-  phaseTitle: "Build the Pipeline",
   title: "Adding Tools",
-  subtitle: "Give agents real-world capabilities with FileReadTool and EXASearchTool",
+  subtitle: "Give agents real-world capabilities with FileReadTool",
   intro:
-    "Notebook 01 then gives the pipeline real inputs. Without tools, agents can only work with data you paste into the task description. Tools like FileReadTool and EXASearchTool let agents read files, search the web, and access real-world data autonomously.",
-  progression:
-    "Move from prompt-only analysis to the notebook's actual DevOps setup: log files on disk and web research for remediation.",
+    "Without tools, agents can only work with data you paste into the task description. The FileReadTool lets the agent open a file from disk on its own — the difference between a chat assistant and an autonomous worker.",
   takeaway:
-    "Tools transform agents from text processors into autonomous workers. FileReadTool lets them read any file, EXASearchTool lets them research solutions. The combination of both produces analysis with real, cited solutions.",
+    "Tools transform agents from text processors into autonomous workers. Without FileReadTool, the agent never even sees the log. With it, the same agent reads the file from disk and produces a real analysis.",
   examples: [
     {
-      title: "Inline snippet",
-      scenario: "You paste only five log lines into the task prompt.",
-      change: "The agent has no file tool and can only use what you pasted.",
-      outcome: "It can guess the issue, but it cannot see earlier successful deployments.",
+      id: "kubernetes",
+      title: "Kubernetes ImagePullBackOff",
+      summary:
+        "FileReadTool loads the K8s log from disk so the agent can actually see ImagePullBackOff and the rollback cascade.",
+      file: "kubernetes_deployment_error.log",
+      logFile: KUBERNETES_LOG,
+      result: {
+        label: "FileReadTool · K8s",
+        description: "Reads the K8s log and analyses the dominant error",
+        log: [
+          { tag: "BOOT", text: "Initializing agent: DevOps Log Analyzer" },
+          { tag: "INFO", text: "Tools: [FileReadTool]" },
+          { tag: "PROCESS", text: "FileReadTool('kubernetes_deployment_error.log')" },
+          { tag: "INFO", text: "Read 21 lines from log file" },
+          { tag: "PROCESS", text: "Scanning ERROR / CRITICAL entries..." },
+          { tag: "OK", text: "FileReadTool-driven analysis complete" },
+        ],
+        output: `# FileReadTool Analysis · K8s
+
+## Read from disk (FileReadTool)
+kubernetes_deployment_error.log — 21 lines
+
+## Dominant error
+Failed to pull image "myapp:v1.2.3": pull access denied → ImagePullBackOff
+
+## Cascade
+ImagePullBackOff → progress deadline exceeded → 0/3 ready replicas →
+service has no endpoints → rollback to v1.2.2.
+
+## Recommendation
+1. Verify the image exists: docker manifest inspect myapp:v1.2.3
+2. Refresh / create the imagePullSecret on the ServiceAccount
+3. Re-run the rollout once the secret is patched`,
+      },
     },
     {
-      title: "Full log file",
-      scenario: "The agent reads the complete Kubernetes deployment log from disk.",
-      change: "FileReadTool gives it the before-and-after context around the failure.",
-      outcome: "It notices the image changed from v1.2.2 to v1.2.3.",
+      id: "database",
+      title: "Postgres FATAL auth",
+      summary:
+        "Same FileReadTool, applied to a Postgres connection log. The agent reads the file and traces the auth-failure cascade to the 503.",
+      file: "database_connection_error.log",
+      logFile: DATABASE_LOG,
+      result: {
+        label: "FileReadTool · DB",
+        description: "Reads the DB log and identifies the FATAL auth pattern",
+        log: [
+          { tag: "BOOT", text: "Initializing agent: DevOps Log Analyzer" },
+          { tag: "INFO", text: "Tools: [FileReadTool]" },
+          { tag: "PROCESS", text: "FileReadTool('database_connection_error.log')" },
+          { tag: "INFO", text: "Read 21 lines from log file" },
+          { tag: "PROCESS", text: "Scanning FATAL / ERROR entries..." },
+          { tag: "OK", text: "FileReadTool-driven analysis complete" },
+        ],
+        output: `# FileReadTool Analysis · Postgres
+
+## Read from disk (FileReadTool)
+database_connection_error.log — 21 lines
+
+## Dominant error
+FATAL: password authentication failed for user "app_user" (×5 attempts)
+
+## Cascade
+Auth failure × 5 → connection pool init failed → /healthz 503 →
+load balancer marks instance unhealthy → process exit 1.
+
+## Recommendation
+1. Confirm the in-cluster secret matches the DB password
+2. Rotate the credential and re-apply the secret
+3. Roll the deployment so pods pick up the new secret`,
+      },
     },
     {
-      title: "Research-backed fix",
-      scenario: "The agent also searches for ImagePullBackOff remediation patterns.",
-      change: "EXASearchTool adds documentation and community fixes to the analysis.",
-      outcome: "The answer moves from diagnosis to practical commands.",
+      id: "cron",
+      title: "Cron silent failure",
+      summary:
+        "FileReadTool still loads the file, even when no errors are logged. The agent has to read between the INFO lines to find the soft signals.",
+      file: "cron_silent_failure.log",
+      logFile: CRON_LOG,
+      result: {
+        label: "FileReadTool · cron",
+        description: "Reads an all-INFO log and surfaces the soft signals",
+        log: [
+          { tag: "BOOT", text: "Initializing agent: DevOps Log Analyzer" },
+          { tag: "INFO", text: "Tools: [FileReadTool]" },
+          { tag: "PROCESS", text: "FileReadTool('cron_silent_failure.log')" },
+          { tag: "INFO", text: "Read 11 lines — no ERROR / CRITICAL entries" },
+          { tag: "PROCESS", text: "Looking deeper at INFO line semantics..." },
+          { tag: "OK", text: "FileReadTool-driven analysis complete" },
+        ],
+        output: `# FileReadTool Analysis · Cron
+
+## Read from disk (FileReadTool)
+cron_silent_failure.log — 11 lines, all INFO
+
+## Soft signals
+- 0 records processed — cleanup matched nothing
+- Disk usage: 94% on /var/lib/postgresql/data — over safe threshold
+
+## Take
+The exit code is 0, but the operational signal says the next run will
+likely fail. Without FileReadTool the agent never sees these lines.`,
+      },
     },
   ],
   demos: [
     {
       id: "tools-impact",
-      question: "How do tools change what the agent can do?",
+      question: "Same input file, same agent. What does the FileReadTool unlock?",
       controlLabel: "Tool Configuration",
+      inputFile: {
+        filename: "kubernetes_deployment_error.log",
+        preview: KUBERNETES_LOG_PREVIEW,
+      },
       options: [
         {
           key: "no-tools",
           label: "No Tools",
-          description: "Agent can only work with data in the task description",
+          description: "Agent has no way to open the file on disk",
         },
         {
           key: "file-read",
           label: "FileReadTool",
           description: "Agent can read log files from disk autonomously",
         },
-        {
-          key: "file-and-search",
-          label: "FileReadTool + EXASearchTool",
-          description: "Agent reads files and searches the web for solutions",
-        },
       ],
       defaultLeft: "no-tools",
-      defaultRight: "file-and-search",
+      defaultRight: "file-read",
       variants: {
         "no-tools": {
-          label: "No Tools",
-          description: "Without tools, analysis is limited to embedded data",
+          label: "No Tools — agent cannot read the file",
+          description: "The file path is in the task, but the agent has no way to open it",
           log: [
             { tag: "BOOT", text: "Initializing agent: DevOps Log Analyzer" },
-            { tag: "INFO", text: "Tools: None" },
-            { tag: "PROCESS", text: "Reading inline log data from task description..." },
-            { tag: "WARN", text: "Cannot read external files" },
-            { tag: "WARN", text: "Cannot search for solutions online" },
-            { tag: "OK", text: "Analysis based only on provided text" },
+            { tag: "INFO", text: "Tools: []" },
+            { tag: "INFO", text: "Task input: kubernetes_deployment_error.log" },
+            { tag: "PROCESS", text: "Agent attempts to access the file path..." },
+            { tag: "ERROR", text: "Cannot read file: agent has no FileReadTool" },
+            { tag: "ERROR", text: "Iteration 1/3 failed — no tool to open kubernetes_deployment_error.log" },
+            { tag: "ERROR", text: "Iteration 2/3 failed — agent retries with the same missing tool" },
+            { tag: "ERROR", text: "Iteration 3/3 failed — exhausted retries" },
+            { tag: "WARN", text: "Task aborted — analysis not produced" },
           ],
-          output: `# Analysis (No Tools)
-Based on the log snippet provided in the task:
+          output: `# Run aborted
 
-Issue: ImagePullBackOff error
-Root Cause: Image myapp:v1.2.3 cannot be pulled
+Tools attached: []
+Task input: kubernetes_deployment_error.log
 
-I cannot read the full log file or search for related issues.
-My analysis is limited to the data embedded in the task description.`,
+The agent had a file path in its task description, but no tool that could
+actually open the file. Each iteration ended the same way:
+
+  ERROR  FileReadTool not available — cannot read kubernetes_deployment_error.log
+
+After 3 iterations the run was aborted. No analysis, no root cause,
+no recommendation — because the agent never saw the contents of the log.`,
         },
         "file-read": {
-          label: "FileReadTool Only",
-          description: "Agent reads the full log but can't research solutions",
+          label: "FileReadTool — agent reads and analyses the file",
+          description: "Same agent, same file. With FileReadTool it actually opens the log.",
           log: [
             { tag: "BOOT", text: "Initializing agent: DevOps Log Analyzer" },
-            { tag: "INFO", text: "Tools: FileReadTool" },
-            { tag: "PROCESS", text: "Using FileReadTool to read /var/log/k8s/deployment.log..." },
-            { tag: "INFO", text: "Read 847 lines from log file" },
-            { tag: "PROCESS", text: "Analyzing full log context..." },
-            { tag: "PROCESS", text: "Identified ImagePullBackOff with surrounding context" },
-            { tag: "OK", text: "Full-context analysis complete" },
+            { tag: "INFO", text: "Tools: [FileReadTool]" },
+            { tag: "INFO", text: "Task input: kubernetes_deployment_error.log" },
+            { tag: "PROCESS", text: "FileReadTool('kubernetes_deployment_error.log')" },
+            { tag: "INFO", text: "Read 21 lines from kubernetes_deployment_error.log" },
+            { tag: "PROCESS", text: "Scanning ERROR / CRITICAL entries..." },
+            { tag: "PROCESS", text: "Building the failure timeline..." },
+            { tag: "OK", text: "Analysis complete in 2 iterations" },
           ],
           output: `# Analysis (FileReadTool)
-Read 847 lines from /var/log/k8s/deployment.log
+Read 21 lines from kubernetes_deployment_error.log
 
-## Issue
-ImagePullBackOff on pod myapp-deployment-7b8c9d5f4-abc12
-
-## Full Context (from log file)
-The log shows 3 previous successful deployments before this failure.
-The image tag changed from v1.2.2 (working) to v1.2.3 (failing).
-No other pods in the namespace are affected.
+## Primary Issue
+Production deployment of myapp:v1.2.3 failed — pods stuck in ImagePullBackOff.
 
 ## Root Cause
-Image myapp:v1.2.3 does not exist or credentials are missing.
-The previous tag v1.2.2 worked, suggesting a CI/CD build issue.
+The container runtime could not pull myapp:v1.2.3:
+"pull access denied for myapp, repository does not exist or may require 'docker login'"
+Either the tag is missing from the registry, or the cluster has no valid imagePullSecret.
+
+## Cascade
+ImagePullBackOff → progressDeadlineSeconds exceeded → 0/3 ready replicas
+→ Service has no endpoints → rollback to v1.2.2.
 
 ## Recommendation
-Check if v1.2.3 was actually pushed to the registry.`,
-        },
-        "file-and-search": {
-          label: "FileReadTool + EXASearchTool",
-          description: "Agent reads files AND searches for solutions",
-          log: [
-            { tag: "BOOT", text: "Initializing agent: DevOps Log Analyzer" },
-            { tag: "INFO", text: "Tools: FileReadTool, EXASearchTool" },
-            { tag: "PROCESS", text: "Using FileReadTool to read /var/log/k8s/deployment.log..." },
-            { tag: "INFO", text: "Read 847 lines from log file" },
-            { tag: "PROCESS", text: "Identified ImagePullBackOff error pattern" },
-            { tag: "PROCESS", text: "Using EXASearchTool: 'Kubernetes ImagePullBackOff troubleshooting'" },
-            { tag: "INFO", text: "Found 5 relevant articles and K8s documentation" },
-            { tag: "PROCESS", text: "Cross-referencing errors with known solutions..." },
-            { tag: "OK", text: "Comprehensive analysis with solutions" },
-          ],
-          output: `# Analysis (FileReadTool + EXASearchTool)
-Read 847 lines from /var/log/k8s/deployment.log
-Searched: "Kubernetes ImagePullBackOff troubleshooting"
-
-## Issue
-ImagePullBackOff on pod myapp-deployment-7b8c9d5f4-abc12
-
-## Root Cause
-Image myapp:v1.2.3 not found in registry (previous v1.2.2 worked).
-
-## Solutions Found (via web search)
-
-### 1. Verify Image Exists
-docker manifest inspect myapp:v1.2.3
-
-### 2. Fix Registry Credentials
-kubectl create secret docker-registry regcred \\
-  --docker-server=registry.example.com \\
-  --docker-username=$USER \\
-  --docker-password=$TOKEN
-
-kubectl patch serviceaccount default \\
-  -p '{"imagePullSecrets":[{"name":"regcred"}]}'
-
-### 3. Validate Network Access
-Check NetworkPolicies allow egress to container registry.
-
-### Sources
-- kubernetes.io/docs/concepts/containers/images/
-- stackoverflow.com/questions/kubernetes-imagepullbackoff`,
+1. Verify the tag exists: docker manifest inspect myapp:v1.2.3
+2. Check the cluster's imagePullSecrets on the ServiceAccount
+3. Re-run the rollout once the secret is patched`,
         },
       },
     },
