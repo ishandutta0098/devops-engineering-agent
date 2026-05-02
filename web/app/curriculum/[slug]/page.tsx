@@ -4,20 +4,51 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { chapters, getChapter, getAdjacentChapters } from "@/lib/registry";
 import { ChapterSidebar } from "@/components/AppShell/ChapterSidebar";
 import { DemoStation } from "@/components/Chapter/DemoStation";
-import { ParameterControls } from "@/components/Chapter/ParameterControls";
-import { GuardrailPlayground } from "@/components/Chapter/GuardrailPlayground";
-import { FullPipelinePlayground } from "@/components/Demo/FullPipelinePlayground";
+import { LogExampleStation } from "@/components/Chapter/LogExampleStation";
+import { IterationTimeline } from "@/components/Chapter/IterationTimeline";
+import { WebSearchTool } from "@/components/Chapter/WebSearchTool";
+import { ContextHandoff } from "@/components/Chapter/ContextHandoff";
+import { CrewOrchestration } from "@/components/Chapter/CrewOrchestration";
+import { GuardrailRetry } from "@/components/Chapter/GuardrailRetry";
+import { TypedAccessSection } from "@/components/Chapter/TypedAccessSection";
+import { PipelineTimeline } from "@/components/Demo/PipelineTimeline";
+import type { ChapterDef } from "@/lib/schema";
 
 export function generateStaticParams() {
   return chapters.map((ch) => ({ slug: ch.slug }));
 }
 
-function SpecializedPlayground({ slug }: { slug: string }) {
-  if (slug === "agent-parameters") return <ParameterControls />;
-  if (slug === "guardrails") return <GuardrailPlayground />;
-  if (slug === "full-pipeline") return <FullPipelinePlayground />;
+function SpecializedPlayground({ chapter }: { chapter: ChapterDef }) {
+  if (chapter.slug === "agent-parameters") {
+    return (
+      <div className="space-y-12">
+        {chapter.iterationDemo && <IterationTimeline demo={chapter.iterationDemo} />}
+        {chapter.webSearchDemo && <WebSearchTool demo={chapter.webSearchDemo} />}
+      </div>
+    );
+  }
+  if (chapter.slug === "task-context" && chapter.contextHandoff) {
+    return <ContextHandoff demo={chapter.contextHandoff} />;
+  }
+  if (chapter.slug === "crew-orchestration" && chapter.crewDemo) {
+    return <CrewOrchestration demo={chapter.crewDemo} />;
+  }
+  if (chapter.slug === "guardrails" && chapter.guardrailDemo) {
+    return <GuardrailRetry demo={chapter.guardrailDemo} />;
+  }
+  if (chapter.slug === "full-pipeline" && chapter.pipelineTimeline) {
+    return <PipelineTimeline demo={chapter.pipelineTimeline} />;
+  }
   return null;
 }
+
+const SPECIALIZED_SLUGS = new Set([
+  "agent-parameters",
+  "task-context",
+  "crew-orchestration",
+  "guardrails",
+  "full-pipeline",
+]);
 
 export default async function ChapterPage({
   params,
@@ -29,7 +60,7 @@ export default async function ChapterPage({
   if (!chapter) notFound();
 
   const { prev, next } = getAdjacentChapters(slug);
-  const hasSpecialized = ["agent-parameters", "guardrails", "full-pipeline"].includes(slug);
+  const hasSpecialized = SPECIALIZED_SLUGS.has(slug);
 
   return (
     <div className="flex">
@@ -49,21 +80,9 @@ export default async function ChapterPage({
             </p>
           </div>
 
-          <div className="bg-surface/50 border border-hairline rounded-lg p-6 mb-6">
-            <div className="font-code text-[10px] text-amber uppercase tracking-widest mb-2">
-              {chapter.phaseTitle}
-            </div>
+          <div className="bg-surface/50 border border-hairline rounded-lg p-6 mb-12">
             <p className="font-body text-body-md text-ink leading-relaxed">
               {chapter.intro}
-            </p>
-          </div>
-
-          <div className="bg-surface-low border border-hairline rounded-lg p-5 mb-12">
-            <h2 className="font-headline text-label-caps uppercase text-gray3 tracking-widest mb-2">
-              Progression
-            </h2>
-            <p className="font-body text-sm text-gray2 leading-relaxed">
-              {chapter.progression}
             </p>
           </div>
 
@@ -71,55 +90,45 @@ export default async function ChapterPage({
             <section className="mb-12">
               <div className="mb-5">
                 <h2 className="font-headline text-headline-md text-ink">
-                  Clear Examples
+                  Try It on Real Logs
                 </h2>
                 <p className="font-body text-sm text-gray2 mt-2">
-                  Use these scenarios to understand what changes before you run
-                  the demo.
+                  Pick a log file. Watch how this chapter&apos;s idea changes
+                  the result.
                 </p>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                {chapter.examples.map((example) => (
-                  <article
-                    key={example.title}
-                    className="bg-surface border border-hairline rounded-lg p-5"
-                  >
-                    <h3 className="font-headline text-headline-sm text-ink mb-3">
-                      {example.title}
-                    </h3>
-                    <div className="space-y-3 font-body text-sm leading-relaxed">
-                      <p className="text-gray2">
-                        <span className="text-amber font-bold">Scenario:</span>{" "}
-                        {example.scenario}
-                      </p>
-                      <p className="text-gray2">
-                        <span className="text-amber font-bold">Change:</span>{" "}
-                        {example.change}
-                      </p>
-                      <p className="text-gray2">
-                        <span className="text-amber font-bold">Outcome:</span>{" "}
-                        {example.outcome}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <LogExampleStation examples={chapter.examples} />
             </section>
           ) : null}
 
-          <section className="space-y-12 mb-16">
-            {chapter.demos.map((demo) => (
-              <DemoStation key={demo.id} demo={demo} />
-            ))}
-          </section>
+          {chapter.demos.length ? (
+            <section className="space-y-12 mb-16">
+              {chapter.demos.map((demo) => (
+                <DemoStation key={demo.id} demo={demo} />
+              ))}
+            </section>
+          ) : null}
+
+          {slug === "structured-output" && (
+            <section className="mb-16">
+              <TypedAccessSection />
+            </section>
+          )}
 
           {hasSpecialized && (
             <section className="mb-16">
               <h2 className="font-headline text-headline-md text-ink mb-6">
-                Advanced Demo
+                {slug === "agent-parameters"
+                  ? "Iteration Timeline"
+                  : slug === "task-context"
+                  ? "Context Handoff"
+                  : slug === "crew-orchestration"
+                  ? "Crew in Motion"
+                  : slug === "guardrails"
+                  ? "Guardrail Retry Loop"
+                  : "Pipeline Timeline"}
               </h2>
-              <SpecializedPlayground slug={slug} />
+              <SpecializedPlayground chapter={chapter} />
             </section>
           )}
 
