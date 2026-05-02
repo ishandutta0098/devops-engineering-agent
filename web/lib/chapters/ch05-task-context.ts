@@ -4,117 +4,62 @@ export const ch05: ChapterDef = {
   slug: "task-context",
   number: 5,
   phase: "Notebook 01",
-  phaseTitle: "Build the Pipeline",
   title: "Task Context & Chaining",
   subtitle: "Pass output from one task as input to the next",
   intro:
     "Notebook 01's second agent only works well when it receives the first agent's findings. In a multi-agent system, the output of one agent needs to flow into the next. The context parameter on a Task injects upstream task outputs into the downstream agent's prompt automatically — no manual wiring needed.",
-  progression:
-    "Connect the analyzer to the researcher so the search is driven by the actual ImagePullBackOff finding.",
   takeaway:
     "Context chaining is what makes multi-agent systems powerful. Without it, each agent works in isolation. With it, downstream agents build on upstream results — producing targeted, specific output instead of generic guesses.",
-  examples: [
-    {
-      title: "Research without context",
-      scenario: "The researcher starts after the analyzer, but cannot see the analyzer's result.",
-      change: "No `context` is passed into the research task.",
-      outcome: "It gives generic Kubernetes commands because it does not know the exact error.",
-    },
-    {
-      title: "Research with context",
-      scenario: "The analyzer finds ImagePullBackOff on `myapp:v1.2.3`.",
-      change: "That analysis is passed into the researcher with `context=[analyze_task]`.",
-      outcome: "The researcher searches for the right failure mode and returns targeted fixes.",
-    },
-    {
-      title: "Planning with two inputs",
-      scenario: "The final agent needs both the log analysis and the research findings.",
-      change: "The plan task receives both previous task outputs as context.",
-      outcome: "The plan can connect evidence, fixes, verification, and prevention.",
-    },
-  ],
-  demos: [
-    {
-      id: "context-chaining",
-      question: "What happens when the researcher gets context from the analyzer?",
-      controlLabel: "Context Chaining",
-      options: [
-        {
-          key: "no-context",
-          label: "No Context",
-          description: "Researcher works independently — no access to the analysis",
-        },
-        {
-          key: "with-context",
-          label: "With Context",
-          description: "Researcher receives the analyzer's output via context=[analyze_task]",
-        },
-      ],
-      defaultLeft: "no-context",
-      defaultRight: "with-context",
-      variants: {
-        "no-context": {
-          label: "No Context",
-          description: "Without context, the researcher starts from scratch",
-          log: [
-            { tag: "BOOT", text: "Initializing crew: 2 agents, 2 independent tasks" },
-            { tag: "PROCESS", text: "Task 1: Log Analyzer analyzing logs..." },
-            { tag: "OK", text: "Task 1 complete: Found ImagePullBackOff" },
-            { tag: "PROCESS", text: "Task 2: Researcher searching for solutions..." },
-            { tag: "WARN", text: "Researcher has NO context from the analysis" },
-            { tag: "PROCESS", text: "Researcher guessing what to search for..." },
-            { tag: "OK", text: "Task 2 complete: Generic Kubernetes troubleshooting" },
-          ],
-          output: `# Researcher Output (No Context)
-Without the analysis output, I'll provide general deployment guidance.
+  demos: [],
+  contextHandoff: {
+    analyzerOutput: `{
+  primary_issue: "ImagePullBackOff on myapp:v1.2.3",
+  root_cause:    "Registry auth missing / tag not pushed",
+  errors: [
+    "ImagePullBackOff",
+    "progressDeadlineExceeded",
+    "0/3 ready replicas",
+    "rollback to v1.2.2"
+  ]
+}`,
+    contextPayload: `{ primary_issue,
+  root_cause,
+  errors[4] }`,
+    researcherWithoutContext: `# Researcher (no context)
 
-## Generic Solutions
-- Check pod status: kubectl get pods
-- Review events: kubectl describe pod <name>
-- Check node resources: kubectl top nodes
-- Review recent deployments: kubectl rollout history
+The Researcher agent has no upstream
+findings to anchor on. Its query is a
+generic placeholder, and the answer is
+the same kubectl bookmark list anyone
+would get for "kubernetes errors".
 
-These are generic suggestions. I don't know the specific error
-because the analysis results weren't passed to me.`,
-        },
-        "with-context": {
-          label: "With Context",
-          description: "Researcher receives analysis and provides targeted solutions",
-          log: [
-            { tag: "BOOT", text: "Initializing crew: 2 agents, 2 chained tasks" },
-            { tag: "PROCESS", text: "Task 1: Log Analyzer analyzing logs..." },
-            { tag: "OK", text: "Task 1 complete: Found ImagePullBackOff" },
-            { tag: "INFO", text: "Passing Task 1 output as context to Task 2..." },
-            { tag: "PROCESS", text: "Task 2: Researcher received analysis context" },
-            { tag: "PROCESS", text: "Searching: 'ImagePullBackOff myapp:v1.2.3 fix'" },
-            { tag: "INFO", text: "Found targeted solutions for ImagePullBackOff" },
-            { tag: "OK", text: "Task 2 complete: Specific remediation steps" },
-          ],
-          output: `# Researcher Output (With Context)
-Based on the analysis: ImagePullBackOff for image myapp:v1.2.3
+- kubectl get pods -A
+- kubectl describe pod <name>
+- kubectl top nodes
+- kubectl rollout history deployment
 
-## Targeted Solutions
+I don't know which image, which
+namespace, or which error to chase —
+because nothing was passed to me.`,
+    researcherWithContext: `# Researcher (with context)
 
-### 1. Verify Image Exists
-docker manifest inspect myapp:v1.2.3
-# If not found, check your CI/CD pipeline built and pushed this tag
+Anchored on Analyzer output, the query
+becomes specific:
 
-### 2. Fix Registry Credentials
-kubectl create secret docker-registry regcred \\
-  --docker-server=registry.example.com \\
-  --docker-username=$USER \\
-  --docker-password=$TOKEN
+  EXASearchTool(
+    "ImagePullBackOff myapp:v1.2.3
+     registry auth fix")
 
-kubectl patch serviceaccount default \\
-  -p '{"imagePullSecrets":[{"name":"regcred"}]}'
-
-### 3. Validate Network Access
-Ensure pods can reach the container registry.
-Check NetworkPolicies and firewall rules.`,
-        },
-      },
-    },
-  ],
+# Targeted plan
+1. Verify the tag exists:
+   docker manifest inspect myapp:v1.2.3
+2. Refresh the registry secret on the
+   ServiceAccount:
+   kubectl patch sa default -p \\
+     '{"imagePullSecrets":[{"name":"regcred"}]}'
+3. kubectl rollout restart deployment myapp
+   to pick up the new secret.`,
+  },
   agentConfig: {
     role: "DevOps Solution Researcher",
     goal: "Find proven solutions and best practices for DevOps issues",
