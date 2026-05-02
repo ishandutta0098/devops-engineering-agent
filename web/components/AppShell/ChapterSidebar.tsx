@@ -23,7 +23,7 @@ export function ChapterSidebar() {
               <Fragment key={ch.slug}>
                 {showPhase ? (
                   <div className="pt-3 pb-1 px-3 font-code text-[10px] uppercase tracking-widest text-amber">
-                    {ch.phase}: {ch.phaseTitle}
+                    {ch.phase}
                   </div>
                 ) : null}
                 <Link
