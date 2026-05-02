@@ -4,291 +4,286 @@ export const ch09: ChapterDef = {
   slug: "full-pipeline",
   number: 9,
   phase: "Notebook 02",
-  phaseTitle: "Harden the Pipeline",
   title: "The Full Pipeline",
   subtitle: "Combine everything into a production-ready DevOps agent system",
   intro:
     "Notebook 02 ends by running the hardened version of the same three-agent system from Notebook 01. Three agents with tools, chained tasks with context, structured output with Pydantic, and guardrails for quality are orchestrated by a single Crew. Compare the base pipeline with the full production version to see what each feature adds.",
-  progression:
-    "This final chapter should feel like the consolidated notebook cell: one run that produces analysis, investigation, and a validated solution plan.",
   takeaway:
     "Each feature you've learned compounds. Tools give agents capabilities. Context chains their output. Structured output makes it machine-readable. Guardrails ensure quality. Together, they produce a production-grade system that turns raw logs into actionable remediation plans.",
-  examples: [
-    {
-      title: "Base pipeline",
-      scenario: "The crew runs with tools and context, but no structured output or guardrails.",
-      change: "Each agent can work, but outputs are mostly free text.",
-      outcome: "The result is useful, but weaker for automation and quality checks.",
-    },
-    {
-      title: "Structured pipeline",
-      scenario: "The analyzer returns `task_outputs/log_analysis.json`.",
-      change: "Downstream agents receive a stable issue, root cause, errors, and timeline.",
-      outcome: "The plan becomes more specific because upstream data is dependable.",
-    },
-    {
-      title: "Production pipeline",
-      scenario: "The full run uses tools, context, structured output, and guardrails.",
-      change: "Bad analysis is rejected, and the solution must include runnable commands.",
-      outcome: "The final artifact is closer to a real incident runbook.",
-    },
+  demos: [],
+  pipelineTimeline: {
+    events: [
+      {
+        agent: "Analyzer",
+        kind: "tool",
+        label: 'FileReadTool("kubernetes_deployment_error.log")',
+        detail: "Read 21 lines from disk",
+        status: "OK",
+        payload: `# FileReadTool input
+file_path = "dummy_logs/kubernetes_deployment_error.log"
+
+# Output preview (21 lines)
+2024-03-15 14:32:01 [INFO]  Initiating deployment of myapp:v1.2.3
+2024-03-15 14:32:09 [ERROR] Failed to pull image "myapp:v1.2.3"
+2024-03-15 14:32:09 [ERROR] ImagePullBackOff: back-off pulling image
+2024-03-15 14:32:25 [ERROR] progressDeadlineExceeded after 600s
+2024-03-15 14:32:29 [WARN]  Rolling back to previous version v1.2.2
+2024-03-15 14:32:35 [ERROR] 0/3 ready replicas — service has no endpoints
+... (16 more lines)`,
+      },
+      {
+        agent: "Analyzer",
+        kind: "iteration",
+        label: "Scan ERROR / CRITICAL entries",
+        detail: "Identifies ImagePullBackOff and rollback cascade",
+        status: "OK",
+        payload: `# Reasoning trace
+- 4 ERROR lines, 1 WARN line, 16 INFO lines
+- Primary signal: ImagePullBackOff at 14:32:09
+- Cascade:
+    14:32:09  ErrImagePull
+    14:32:25  progressDeadlineExceeded
+    14:32:29  Rollback to v1.2.2
+    14:32:35  0/3 ready replicas
+- Hypothesis: tag missing or registry credentials invalid
+- Next step: emit structured LogAnalysisReport`,
+      },
+      {
+        agent: "Analyzer",
+        kind: "guardrail",
+        label: "validate_log_analysis()",
+        detail: "Code guardrail · len(errors) ≥ 1",
+        status: "OK",
+        payload: `def validate_log_analysis(result):
+    report = result.pydantic
+    if len(report.errors) == 0:
+        return (False,
+                "Found zero errors. Look harder at INFO lines.")
+    return (True, report)
+
+# Attempt 1 — len(errors) = 4 → PASS`,
+      },
+      {
+        agent: "Analyzer",
+        kind: "pydantic",
+        label: "output_pydantic = LogAnalysisReport",
+        detail: "Typed JSON, schema-validated",
+        status: "OK",
+        payload: `LogAnalysisReport(
+  primary_issue =
+    "Production deployment failed due to ImagePullBackOff on myapp:v1.2.3",
+  errors = [
+    "Failed to pull image \\"myapp:v1.2.3\\": pull access denied",
+    "ImagePullBackOff",
+    "progressDeadlineExceeded after 600s",
+    "0/3 ready replicas — service has no endpoints",
   ],
-  demos: [
-    {
-      id: "pipeline-features",
-      question: "How does enabling production features change the pipeline output?",
-      controlLabel: "Feature Set",
-      options: [
-        {
-          key: "base",
-          label: "Base Pipeline",
-          description: "Tools and context only — no structured output or guardrails",
-        },
-        {
-          key: "with-structured",
-          label: "+ Structured Output",
-          description: "Adds Pydantic models for typed, parseable results",
-        },
-        {
-          key: "with-guardrails",
-          label: "+ Guardrails",
-          description: "Adds code guardrail on analysis and string guardrail on solution",
-        },
-        {
-          key: "full",
-          label: "Full Production",
-          description: "All features: tools, context, structured output, guardrails",
-        },
-      ],
-      defaultLeft: "base",
-      defaultRight: "full",
-      variants: {
-        base: {
-          label: "Base Pipeline",
-          description: "Works but fragile — no structure or validation",
-          log: [
-            { tag: "BOOT", text: "Initializing pipeline (base mode)" },
-            { tag: "INFO", text: "Features: tools=yes, structured_output=no, guardrails=no" },
-            { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
-            { tag: "OK", text: "Agent 1 complete: task_outputs/log_analysis.md" },
-            { tag: "PROCESS", text: "Agent 2 (Researcher): Searching..." },
-            { tag: "OK", text: "Agent 2 complete: task_outputs/investigation_report.md" },
-            { tag: "PROCESS", text: "Agent 3 (Plan Writer): Writing plan..." },
-            { tag: "OK", text: "Agent 3 complete: task_outputs/solution_plan.md" },
-            { tag: "SUCCESS", text: "Pipeline complete (base)" },
-          ],
-          output: `Generated artifacts:
-- task_outputs/log_analysis.md
-- task_outputs/investigation_report.md
-- task_outputs/solution_plan.md
-
-# task_outputs/log_analysis.md
-
-## Analysis
-The deployment failed. There were image pull errors.
-
-# task_outputs/investigation_report.md
-
-## Solutions Found
-- Check the image name
-- Add credentials
-
-# task_outputs/solution_plan.md
-
-## Plan
-1. Fix the image
-2. Redeploy
-
-Without structured output, the analysis is free text.
-Without guardrails, subtle issues may be missed.
-The plan is vague because upstream data was unstructured.`,
-        },
-        "with-structured": {
-          label: "+ Structured Output",
-          description: "Analysis returns typed JSON — downstream agents get structured data",
-          log: [
-            { tag: "BOOT", text: "Initializing pipeline (+ structured output)" },
-            { tag: "INFO", text: "Features: tools=yes, structured_output=yes, guardrails=no" },
-            { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
-            { tag: "PROCESS", text: "  Constraining output to LogAnalysisReport schema..." },
-            { tag: "OK", text: "Agent 1 complete: Structured JSON report" },
-            { tag: "PROCESS", text: "Agent 2 (Researcher): Received typed analysis..." },
-            { tag: "OK", text: "Agent 2 complete: Targeted solutions" },
-            { tag: "PROCESS", text: "Agent 3 (Plan Writer): Building from structured data..." },
-            { tag: "OK", text: "Agent 3 complete: Better plan" },
-            { tag: "SUCCESS", text: "Pipeline complete (+ structured)" },
-          ],
-          output: `# Remediation Plan (+ Structured Output)
-
-## Incident (from structured analysis)
-Primary Issue: ImagePullBackOff on myapp:v1.2.3
-Root Cause: Registry credentials missing
-Errors: 4 identified
-Components: Pod, Deployment, Service
-
-## Remediation Steps
-1. Create registry secret:
-   kubectl create secret docker-registry regcred ...
-
-2. Patch service account:
-   kubectl patch sa default ...
-
-3. Redeploy:
-   kubectl rollout restart deployment myapp-deployment
-
-Better — structured analysis means the plan has specific details.
-But still no quality validation on the analysis itself.`,
-        },
-        "with-guardrails": {
-          label: "+ Guardrails",
-          description: "Analysis is validated, solutions must include shell commands",
-          log: [
-            { tag: "BOOT", text: "Initializing pipeline (+ guardrails)" },
-            { tag: "INFO", text: "Features: tools=yes, structured_output=yes, guardrails=yes" },
-            { tag: "PROCESS", text: "Agent 1 (Analyzer): Reading logs..." },
-            { tag: "GUARDRAIL", text: "validate_log_analysis() → PASSED (4 errors)" },
-            { tag: "OK", text: "Agent 1 complete: Validated analysis" },
-            { tag: "PROCESS", text: "Agent 2 (Researcher): Searching..." },
-            { tag: "OK", text: "Agent 2 complete: Research done" },
-            { tag: "PROCESS", text: "Agent 3 (Plan Writer): Writing plan..." },
-            { tag: "GUARDRAIL", text: "String guardrail: checking for ≥3 shell commands..." },
-            { tag: "GUARDRAIL", text: "String guardrail → PASSED" },
-            { tag: "OK", text: "Agent 3 complete: Validated plan" },
-            { tag: "SUCCESS", text: "Pipeline complete (+ guardrails)" },
-          ],
-          output: `# Remediation Plan (+ Guardrails)
-
-## Validated Analysis
-Primary Issue: ImagePullBackOff on myapp:v1.2.3
-Errors: 4 (validated by code guardrail)
-
-## Remediation (validated: ≥3 shell commands)
-
-### Step 1: Verify image
-docker manifest inspect myapp:v1.2.3
-
-### Step 2: Create secret
-kubectl create secret docker-registry regcred \\
-  --docker-server=registry.example.com \\
-  --docker-username=$USER --docker-password=$TOKEN
-
-### Step 3: Patch SA
-kubectl patch sa default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
-
-### Step 4: Redeploy
-kubectl rollout restart deployment myapp-deployment
-
-Guardrails ensured both the analysis quality AND the plan quality.`,
-        },
-        full: {
-          label: "Full Production Pipeline",
-          description: "All features active — tools, context, structured output, guardrails",
-          log: [
-            { tag: "BOOT", text: "Initializing pipeline (FULL PRODUCTION)" },
-            { tag: "INFO", text: "Features: ALL ENABLED" },
-            { tag: "PROCESS", text: "Agent 1 (Analyzer): FileReadTool reading logs..." },
-            { tag: "PROCESS", text: "  output_pydantic=LogAnalysisReport" },
-            { tag: "INFO", text: "  Artifact: task_outputs/log_analysis.json" },
-            { tag: "GUARDRAIL", text: "validate_log_analysis() → PASSED (4 errors)" },
-            { tag: "OK", text: "Agent 1 complete: Structured + validated" },
-            { tag: "PROCESS", text: "Agent 2 (Researcher): context from Agent 1" },
-            { tag: "INFO", text: "  EXASearchTool: 'ImagePullBackOff fix kubernetes'" },
-            { tag: "INFO", text: "  Found 5 targeted solutions with sources" },
-            { tag: "OK", text: "Agent 2 complete: task_outputs/investigation_report.md" },
-            { tag: "PROCESS", text: "Agent 3 (Plan Writer): context from Agents 1+2" },
-            { tag: "GUARDRAIL", text: "String guardrail → PASSED (4 shell commands)" },
-            { tag: "OK", text: "Agent 3 complete: task_outputs/solution_plan.md" },
-            { tag: "SUCCESS", text: "Pipeline complete — ALL FEATURES ACTIVE" },
-          ],
-          output: `Generated artifacts:
-- task_outputs/log_analysis.json
-- task_outputs/investigation_report.md
-- task_outputs/solution_plan.md
-
-# task_outputs/log_analysis.json
-
-{
-  "primary_issue": "Production deployment failed due to ImagePullBackOff",
-  "root_cause": "Image myapp:v1.2.3 not found or registry credentials missing",
-  "errors": [
-    "Failed to pull image myapp:v1.2.3: pull access denied",
-    "Pod status: ImagePullBackOff",
-    "Deployment rollout failed: exceeded progress deadline",
-    "Production deployment failed - rollback initiated"
+  affected_components = [
+    "myapp-deployment",
+    "myapp-service",
+    "myapp-pods",
   ],
-  "affected_components": [
-    "Pod: myapp-deployment-7b8c9d5f4-abc12",
-    "Deployment: myapp-deployment",
-    "Service: myapp-service"
-  ],
-  "timeline": [
-    "14:32:15 - Deployment started",
-    "14:32:18 - Image pull access denied",
+  timeline = [
+    "14:32:01 - Image pull initiated",
+    "14:32:09 - ErrImagePull",
     "14:32:25 - Deployment deadline exceeded",
-    "14:32:29 - Rollback initiated"
+    "14:32:29 - Rollback initiated",
   ]
-}
+)`,
+      },
+      {
+        agent: "Analyzer",
+        kind: "artifact",
+        label: "task_outputs/log_analysis.json",
+        detail: "Persisted to disk",
+        status: "OK",
+        payload: `# Saved file: task_outputs/log_analysis.json
+{
+  "primary_issue": "Production deployment failed due to ImagePullBackOff on myapp:v1.2.3",
+  "errors": [
+    "Failed to pull image \\"myapp:v1.2.3\\": pull access denied",
+    "ImagePullBackOff",
+    "progressDeadlineExceeded after 600s",
+    "0/3 ready replicas"
+  ],
+  "affected_components": ["myapp-deployment", "myapp-service", "myapp-pods"],
+  "schema_version": "1.0.0"
+}`,
+      },
+      {
+        agent: "Researcher",
+        kind: "context",
+        label: "context = [analyze_task]",
+        detail: "Receives Analyzer report",
+        status: "INFO",
+        payload: `# Inbound context (compacted)
 
-# task_outputs/investigation_report.md
+primary_issue: "ImagePullBackOff on myapp:v1.2.3"
+errors[4]: ["pull access denied", "ImagePullBackOff",
+            "progressDeadlineExceeded",
+            "0/3 ready replicas"]`,
+      },
+      {
+        agent: "Researcher",
+        kind: "tool",
+        label: 'EXASearchTool("ImagePullBackOff myapp:v1.2.3 fix")',
+        detail: "5 sources · kubernetes.io · stackoverflow",
+        status: "OK",
+        payload: `# EXASearchTool — 5 results
+1. kubernetes.io/docs/tasks/configure-pod-container
+   "Pull an image from a private registry"
+2. stackoverflow.com/questions/75120000
+   "ImagePullBackOff: pull access denied — verify tag with docker manifest inspect"
+3. cloud.google.com/kubernetes-engine/docs/troubleshooting
+   "Common ImagePullBackOff causes: missing imagePullSecret, expired token"
+4. github.com/kubernetes/kubernetes/issues/75944
+   "imagePullSecrets not propagated to ServiceAccount"
+5. medium.com/devops-with-kubernetes
+   "Rotating registry credentials safely"`,
+      },
+      {
+        agent: "Researcher",
+        kind: "tool",
+        label: 'EXASearchTool("imagePullSecret rotation serviceaccount")',
+        detail: "3 sources · cloud.google.com · kubernetes.io",
+        status: "OK",
+        payload: `# EXASearchTool — 3 results
+1. kubernetes.io/docs/tasks/configure-pod-container
+   "Patch a ServiceAccount with imagePullSecrets:
+    kubectl patch sa default -p '{\\"imagePullSecrets\\":[{\\"name\\":\\"regcred\\"}]}'"
+2. cloud.google.com/kubernetes-engine/docs
+   "Recreate the secret then rollout restart"
+3. kubernetes.io/docs/concepts/configuration/secret
+   "kubernetes.io/dockerconfigjson secret type for registry creds"`,
+      },
+      {
+        agent: "Researcher",
+        kind: "iteration",
+        label: "Compose investigation_report.md",
+        detail: "Common causes + proven fixes",
+        status: "OK",
+        payload: `# Reasoning trace
+- 8 sources gathered across 2 queries
+- Common-cause distribution:
+    tag missing            : 4 / 8
+    stale imagePullSecret  : 5 / 8
+    SA not patched         : 3 / 8
+- Proven fix sequence emerges:
+    1) docker manifest inspect — verify tag
+    2) kubectl create secret docker-registry — refresh creds
+    3) kubectl patch sa default — bind secret
+    4) kubectl rollout restart — pick up new creds
+- Drafting investigation_report.md`,
+      },
+      {
+        agent: "Researcher",
+        kind: "artifact",
+        label: "task_outputs/investigation_report.md",
+        detail: "Persisted to disk",
+        status: "OK",
+        payload: `# investigation_report.md (excerpt)
 
-## Findings
-- Kubernetes ImagePullBackOff commonly means the image tag is absent or credentials are invalid.
-- Official container image guidance recommends validating the image reference and pull secret configuration.
-- The previous working tag suggests a CI/CD publish or registry credential issue.
+## Common causes
+- Tag never landed in registry (verify with docker manifest inspect)
+- ServiceAccount missing imagePullSecret reference
+- Stale registry credentials (token expired or rotated)
 
-# task_outputs/solution_plan.md
+## Proven fixes
+1. docker manifest inspect myapp:v1.2.3
+2. kubectl create secret docker-registry regcred ...
+3. kubectl patch sa default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+4. kubectl rollout restart deployment myapp
 
-String guardrail requirement: at least 3 copy-pasteable shell commands.
+## Sources
+kubernetes.io · stackoverflow.com · cloud.google.com · github.com`,
+      },
+      {
+        agent: "PlanWriter",
+        kind: "context",
+        label: "context = [analyze_task, research_task]",
+        detail: "Receives Analyzer + Researcher",
+        status: "INFO",
+        payload: `# Inbound context (compacted)
 
-# Production Remediation Plan
+# from analyze_task
+primary_issue: "ImagePullBackOff on myapp:v1.2.3"
+errors[4]: [...]
+affected_components[3]: [...]
 
-## Incident Summary
-| Field | Value |
-|-------|-------|
-| Primary Issue | ImagePullBackOff on myapp:v1.2.3 |
-| Root Cause | Registry credentials missing/expired |
-| Severity | P0 — Production down |
-| Errors | 4 (validated by guardrail) |
-| Affected | Pod, Deployment, Service |
+# from research_task
+common_causes[3]: ["tag missing", "stale imagePullSecret",
+                   "ServiceAccount not patched"]
+proven_fixes[4]: ["docker manifest inspect ...",
+                  "kubectl create secret docker-registry ...",
+                  "kubectl patch sa default ...",
+                  "kubectl rollout restart deployment myapp"]`,
+      },
+      {
+        agent: "PlanWriter",
+        kind: "iteration",
+        label: "Sequence P0 immediate actions",
+        detail: "Verify tag → secret → patch sa → restart",
+        status: "OK",
+        payload: `# Reasoning trace
+- Group fixes by urgency:
+    P0 (15 min): unblock the deployment now
+    P1 (1 day): prevent recurrence
+- Order P0 actions for safety:
+    1) Verify tag exists (cheap, read-only)
+    2) Recreate secret with current creds
+    3) Patch ServiceAccount to reference secret
+    4) Rollout restart so pods pick up new creds
+- Add a verification step: kubectl rollout status
+- Drafting solution_plan.md`,
+      },
+      {
+        agent: "PlanWriter",
+        kind: "guardrail",
+        label: "string guardrail: ≥3 shell commands",
+        detail: "Found 4 copy-pasteable commands",
+        status: "OK",
+        payload: `Rule: "Solution must include at least 3
+       copy-pasteable shell commands."
 
-## P0: Immediate (ETA: 15 min)
-1. Verify image:
-   docker manifest inspect myapp:v1.2.3
+Found in solution_plan.md:
+  1. docker manifest inspect myapp:v1.2.3
+  2. kubectl create secret docker-registry regcred ...
+  3. kubectl patch sa default ...
+  4. kubectl rollout restart deployment myapp
 
-2. Create registry secret:
-   kubectl create secret docker-registry regcred \\
+→ PASS on attempt 1`,
+      },
+      {
+        agent: "PlanWriter",
+        kind: "artifact",
+        label: "task_outputs/solution_plan.md",
+        detail: "Final P0 runbook with verification",
+        status: "OK",
+        payload: `# Solution plan · myapp ImagePullBackOff
+
+## P0 (15 min)
+1. docker manifest inspect myapp:v1.2.3
+2. kubectl create secret docker-registry regcred \\
      --docker-server=registry.example.com \\
-     --docker-username=$USER --docker-password=$TOKEN
-
-3. Patch default SA:
-   kubectl patch sa default \\
+     --docker-username=$USER \\
+     --docker-password=$TOKEN
+3. kubectl patch sa default \\
      -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+4. kubectl rollout restart deployment myapp
 
-4. Redeploy:
-   kubectl rollout restart deployment myapp-deployment
-
-## P1: Prevention (ETA: 1 day)
+## P1 (1 day)
 - Add imagePullSecrets to Helm chart defaults
 - CI gate: verify image exists before deploy
-- Credential rotation quarterly
 
-## P2: Monitoring (ETA: 1 week)
-- Alert on ImagePullBackOff events
-- Deployment success rate dashboard
-- Runbook link in PagerDuty
-
-## Verification
-kubectl get pods -l app=myapp -w
-kubectl rollout status deployment myapp-deployment --timeout=120s
-curl -f https://myapp.example.com/healthz`,
-        },
+## Verify
+kubectl rollout status deployment myapp`,
       },
-    },
-  ],
+    ],
+  },
   agentConfig: {
-    role: "DevOps Plan Writer",
-    goal: "Create comprehensive, production-grade remediation plans",
+    role: "DevOps Pipeline Coordinator",
+    goal: "Orchestrate the complete log analysis and remediation pipeline",
     backstory:
-      "You are a senior DevOps lead who orchestrates incident response across the full pipeline.",
+      "You coordinate the production-grade DevOps agent pipeline.",
   },
 };
