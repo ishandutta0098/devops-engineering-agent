@@ -1,36 +1,114 @@
 import type { ChapterDef } from "../schema";
+import { KUBERNETES_LOG, DATABASE_LOG, CRON_LOG } from "../log-files";
 
 export const ch01: ChapterDef = {
   slug: "first-agent",
   number: 1,
   phase: "Notebook 01",
-  phaseTitle: "Build the Pipeline",
   title: "Your First Agent",
   subtitle: "Define a specialized AI worker with a role, goal, and backstory",
   intro:
     "Notebook 01 starts with the atomic unit of CrewAI: an Agent. The role tells it what kind of expert to be, the goal orients its reasoning, and the backstory shapes its depth. Watch how changing these dramatically alters the output.",
-  progression:
-    "Start here by shaping the DevOps Log Analyzer persona before giving it a task or tools.",
   takeaway:
     "A well-defined role, goal, and backstory is the difference between a generic chatbot and a domain expert. The more specific the persona, the deeper and more actionable the output.",
   examples: [
     {
-      title: "Generic assistant",
-      scenario: "You ask a broad AI helper to inspect deployment logs.",
-      change: "The role only says `AI Assistant`, so it has no DevOps point of view.",
-      outcome: "It notices an error, but the recommendation stays vague.",
+      id: "kubernetes",
+      title: "Kubernetes ImagePullBackOff",
+      summary:
+        "Same DevOps Log Analyzer persona, applied to a failed Kubernetes rollout log. Watch how the role+goal+backstory pulls out the registry auth root cause.",
+      file: "kubernetes_deployment_error.log",
+      logFile: KUBERNETES_LOG,
+      result: {
+        label: "DevOps Log Analyzer · K8s rollout",
+        description: "Persona spots ImagePullBackOff cascade and rollback",
+        log: [
+          { tag: "BOOT", text: "Initializing agent: 'DevOps Log Analyzer'" },
+          { tag: "INFO", text: "Role: DevOps Log Analyzer · Goal: identify failure patterns" },
+          { tag: "INFO", text: "Input: kubernetes_deployment_error.log (21 lines)" },
+          { tag: "PROCESS", text: "Scanning for ERROR / CRITICAL entries..." },
+          { tag: "PROCESS", text: "Identified ImagePullBackOff cascade" },
+          { tag: "OK", text: "Persona-driven analysis complete" },
+        ],
+        output: `# Persona Analysis · DevOps Log Analyzer
+
+## Primary Issue
+Production deployment of myapp:v1.2.3 failed because Kubernetes could not pull the image.
+
+## Why this persona helps
+A generic assistant would say "image pull failed". The DevOps Log Analyzer recognizes this as a registry-auth ImagePullBackOff and traces the cascade.
+
+## Root Cause
+Pull access denied for myapp:v1.2.3 — the tag is missing from the registry, or the cluster has no valid imagePullSecret.
+
+## Cascade
+ImagePullBackOff → progress deadline exceeded → 0/3 ready replicas → service has no endpoints → rollback to v1.2.2.`,
+      },
     },
     {
-      title: "DevOps specialist",
-      scenario: "You ask a DevOps Log Analyzer to inspect the same logs.",
-      change: "The role and goal focus the agent on Kubernetes failures and root causes.",
-      outcome: "It identifies ImagePullBackOff and explains the rollout cascade.",
+      id: "database",
+      title: "Postgres FATAL auth",
+      summary:
+        "Same persona, applied to a Postgres connection failure log. The DevOps voice highlights credential rotation and the 503 cascade instead of just \"connection failed\".",
+      file: "database_connection_error.log",
+      logFile: DATABASE_LOG,
+      result: {
+        label: "DevOps Log Analyzer · DB outage",
+        description: "Persona traces the auth failure to a 503 cascade",
+        log: [
+          { tag: "BOOT", text: "Initializing agent: 'DevOps Log Analyzer'" },
+          { tag: "INFO", text: "Input: database_connection_error.log (21 lines)" },
+          { tag: "PROCESS", text: "Scanning for FATAL / CRITICAL entries..." },
+          { tag: "PROCESS", text: "Identified repeated password authentication failures" },
+          { tag: "OK", text: "Persona-driven analysis complete" },
+        ],
+        output: `# Persona Analysis · DevOps Log Analyzer
+
+## Primary Issue
+Application startup failed because the connection pool could not authenticate against postgres-prod.
+
+## Why this persona helps
+A generic assistant would stop at "connection failed". The DevOps Log Analyzer connects FATAL: password authentication failed to credential rotation and the 503 health check cascade.
+
+## Root Cause
+The configured user app_user has an invalid password. All 5 retry attempts hit the same FATAL, suggesting an expired secret or out-of-sync credential rotation.
+
+## Cascade
+Auth failure × 5 → connection pool init failed → /healthz → 503 → load balancer marks instance unhealthy → process exit 1.`,
+      },
     },
     {
-      title: "Expert backstory",
-      scenario: "You add production incident experience to the agent's backstory.",
-      change: "The agent knows to look for registry auth, rollout deadlines, and service impact.",
-      outcome: "The output becomes a more useful incident analysis instead of a short summary.",
+      id: "cron",
+      title: "Cron silent failure",
+      summary:
+        "Same persona, applied to a log with no errors at all. The DevOps Log Analyzer still surfaces the suspicious \"0 records processed\" and 94% disk warning a generic assistant would skip.",
+      file: "cron_silent_failure.log",
+      logFile: CRON_LOG,
+      result: {
+        label: "DevOps Log Analyzer · silent cron",
+        description: "Persona reads between INFO lines to flag hidden risk",
+        log: [
+          { tag: "BOOT", text: "Initializing agent: 'DevOps Log Analyzer'" },
+          { tag: "INFO", text: "Input: cron_silent_failure.log (11 lines)" },
+          { tag: "PROCESS", text: "No ERROR / CRITICAL entries found..." },
+          { tag: "PROCESS", text: "Looking deeper at INFO line semantics" },
+          { tag: "OK", text: "Persona-driven analysis complete" },
+        ],
+        output: `# Persona Analysis · DevOps Log Analyzer
+
+## Primary Issue
+The job reported success, but the run is anomalous and worth investigating.
+
+## Why this persona helps
+A generic assistant would accept "completed successfully" and move on. The DevOps Log Analyzer reads between INFO lines: 0 records processed and 94% disk on the data volume.
+
+## Anomalies
+- "0 records processed" — either the dataset is empty or the cleanup query did not match anything as expected.
+- "Disk usage: 94%" — over the typical 90% safe threshold for /var/lib/postgresql/data.
+
+## Take
+The exit code is 0, but the operational signal says the next run will likely fail. Persona depth is what catches this.`,
+      },
     },
   ],
   demos: [
