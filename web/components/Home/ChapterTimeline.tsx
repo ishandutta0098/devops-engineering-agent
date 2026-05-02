@@ -35,9 +35,6 @@ export function ChapterTimeline() {
                     <h3 className="font-headline text-headline-sm text-ink mt-1">
                       {ch.title}
                     </h3>
-                    <p className="font-code text-[10px] uppercase tracking-widest text-gray3 mt-1">
-                      {ch.phaseTitle}
-                    </p>
                     <p className="font-body text-sm text-gray2 mt-2">
                       {ch.subtitle}
                     </p>
